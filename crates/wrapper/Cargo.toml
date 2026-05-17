@@ -1,0 +1,10 @@
+[package]
+name = "wrapper"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+dbus.workspace = true
+color-eyre.workspace = true
+
+[lib]
