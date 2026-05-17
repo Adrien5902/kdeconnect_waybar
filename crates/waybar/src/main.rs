@@ -21,7 +21,7 @@ fn main() -> Result<()> {
 
         let output = OutputFormat {
             text: match devices.get(0) {
-                Some(device) => &device.battery_status()?.charge.to_string(),
+                Some(device) => &device.get_battery_status()?.charge.to_string(),
                 None => "Device not found",
             },
             tooltip: "b",
