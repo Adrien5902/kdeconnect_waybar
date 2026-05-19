@@ -31,7 +31,6 @@ struct Args {
 fn main() -> Result<()> {
     color_eyre::install()?;
     let matches = command!()
-        .arg(arg!([name] "Optional name to operate on"))
         .arg(
             arg!(
                 -c --config <NAME> "Use config with a specific name"
@@ -43,12 +42,20 @@ fn main() -> Result<()> {
             Command::new("gen_schema")
                 .about("Generates json schema file associated with config.json"),
         )
+        .subcommand(Command::new("path").about("Prints the config.json path"))
         .get_matches();
 
     if let Some(_matches) = matches.subcommand_matches("gen_schema") {
         let path = ConfigFile::dir()?.join("config.schema.json");
         fs::write(&path, serde_json::to_string_pretty(&ConfigFile::schema())?)?;
         println!("generated json schema at {}", path.to_str().unwrap());
+        return Ok(());
+    }
+
+    if let Some(_matches) = matches.subcommand_matches("path") {
+        let path = ConfigFile::config_file_path()?;
+        fs::create_dir_all(path.parent().unwrap())?;
+        println!("{}", path.to_str().unwrap());
         return Ok(());
     }
 
