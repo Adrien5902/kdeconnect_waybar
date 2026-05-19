@@ -61,10 +61,13 @@ where
 }
 
 impl Config {
+    pub const DIR_NAME: &'static str = env!("CARGO_PKG_NAME");
     pub const FILE_NAME: &'static str = "config.json";
 
     pub fn dir() -> Result<PathBuf> {
-        Ok(dirs::config_dir().ok_or(eyre!("Unable to find config dir"))?)
+        Ok(dirs::config_dir()
+            .ok_or(eyre!("Unable to find config dir"))?
+            .join(Self::DIR_NAME))
     }
 
     pub fn config_file_path() -> Result<PathBuf> {
