@@ -15,39 +15,76 @@ pub struct ConfigFile {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct Config {
+    /// Name of this config, use `kdeconnect_waybar --config <name>` to start this config
+    /// Blank means default config
     pub name: Option<String>,
+
+    /// A kdeconnect device id, e.g. `"4cc0978ea8b44b2fa33c188711071a9c"`
+    /// Tells the app to specifically use this device for this config
+    /// Can be obtained with command `kdeconnect-cli -l`
     pub device_id: Option<String>,
+
     #[serde(deserialize_with = "deserialize_duration_secs")]
     #[serde(default = "default_update_interval")]
     #[schemars(with = "f64")]
+    /// The interval at which the waybar text refreshes in seconds
+    /// Default is 5
     pub update_interval_secs: Duration,
 
     #[schemars(with = "String")]
+    /// The default format used for the module text
     pub format: Format,
     #[schemars(with = "Option<String>")]
+    /// The default format used for the module tooltip text
     pub tooltip_format: Option<Format>,
 
     #[serde(default = "default_device_not_found_text")]
+    /// The format used for the module text when kdeconnect isn't running or when device isn't connected
     pub device_not_found_text: String,
     #[serde(default = "default_device_not_found_tooltip_text")]
+    /// The format used for the module tooltip text when kdeconnect isn't running or when device isn't connected
     pub device_not_found_tooltip_text: String,
 
     #[serde(default = "default_is_charging_text")]
+    /// The text replacing {Battery:IsChargingText} (in any format) when device is charging
+    /// Can contain Nerd-Font icons
+    /// e.g. `"󰂄 Charging... "`
     pub is_charging_text: String,
     #[serde(default = "default_isnt_charging_text")]
+    /// The text replacing {Battery:IsChargingText} (in any format) when device isn't charging
+    /// Can contain Nerd-Font icons
+    /// `"󱟩 Not charging"`
     pub isnt_charging_text: String,
 
     #[serde(default = "default_charge_ranges")]
+    /// An array of battery charge ranges values
+    /// e.g. [25, 50, 75] => contains 4 ranges 0-25, 25-50, 50-75, 75-100
+    /// used alongside is_charging_texts and isnt_charging_texts
     pub charge_ranges: Vec<i64>,
     #[serde(default = "default_is_charging_texts")]
+    /// Can contain Nerd-Font icons
+    /// used alongside charge_ranges, must contains len(charge_ranges)+1 strings
+    /// When device is charging will replace {Battery:ChargeTexts} in any format with the nth string,
+    /// corresponding to the nth charge range the device battery charge is into
+    /// e.g. ["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"] or ["Critical", "Low", "Good", "Super-charged"]
     pub is_charging_texts: Vec<String>,
     #[serde(default = "default_isnt_charging_texts")]
+    /// Can contain Nerd-Font icons
+    /// used alongside charge_ranges, must contains len(charge_ranges)+1 strings
+    /// When device isn't charging will replace {Battery:ChargeTexts} in any format with the nth string,
+    /// corresponding to the nth charge range the device battery charge is into
+    /// e.g. ["󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"] or ["Critical", "Low", "Good", "Super-charged"]
     pub isnt_charging_texts: Vec<String>,
 
     #[serde(default = "default_device_phone_text")]
+    /// Can contain Nerd-Font icons
+    /// Will replace {DeviceInfo:DeviceType} in any format if device is a phone
+    ///  e.g. `"Phone "`,
     pub device_phone_text: String,
-    /// DeviceInfo:
     #[serde(default = "default_device_tablet_text")]
+    /// Can contain Nerd-Font icons
+    /// Will replace {DeviceInfo:DeviceType} in any format if device is a tablet
+    /// e.g. `"Tablet "`
     pub device_tablet_text: String,
 }
 

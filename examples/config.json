@@ -1,0 +1,51 @@
+{
+	"$schema": "./config.schema.json",
+	"configs": [
+		{
+			"update_interval_secs": 5,
+			"format": ": {Battery:ChargeTexts}%",
+			"tooltip_format": "Device type: {DeviceInfo:DeviceTypeText}\nBattery status: {Battery:IsChargingText}",
+			"device_not_found_text": "",
+			"device_not_found_tooltip_text": "Device not found make sure kdeconnect is running and phone is connected",
+			"device_phone_text": "Phone ",
+			"device_tablet_text": "Tablet ",
+			"is_charging_text": "󰂄 Charging ...",
+			"isnt_charging_text": "󱟩 Not charging",
+			"is_charging_texts": [
+				"󰢜",
+				"󰂆",
+				"󰂇",
+				"󰂈",
+				"󰢝",
+				"󰂉",
+				"󰢞",
+				"󰂊",
+				"󰂋",
+				"󰂅"
+			],
+			"isnt_charging_texts": [
+				"󰁺",
+				"󰁻",
+				"󰁼",
+				"󰁽",
+				"󰁾",
+				"󰁿",
+				"󰂀",
+				"󰂁",
+				"󰂂",
+				"󰁹"
+			],
+			"charge_ranges": [
+				10,
+				20,
+				30,
+				40,
+				50,
+				60,
+				70,
+				80,
+				90
+			]
+		}
+	]
+}

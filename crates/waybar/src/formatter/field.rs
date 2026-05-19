@@ -15,7 +15,7 @@ pub enum FieldKind {
 
 #[derive(Debug, Clone, Copy, EnumString)]
 pub enum DeviceInfoField {
-    DeviceTypeFormat,
+    DeviceTypeText,
 }
 
 #[derive(Debug, Clone, Copy, EnumString)]
@@ -70,7 +70,7 @@ impl FieldKind {
                         }
                     }
                     BatteryField::ChargeTexts => {
-                        let mut index = None;
+                        let mut index: Option<usize> = None;
                         for (i, until_charge) in config.charge_ranges.iter().enumerate() {
                             if status.charge < *until_charge {
                                 index = Some(i);
@@ -99,7 +99,7 @@ impl FieldKind {
                 }
             }
             FieldKind::DeviceInfo(f) => match f {
-                DeviceInfoField::DeviceTypeFormat => {
+                DeviceInfoField::DeviceTypeText => {
                     let status = device.get_device_info()?;
                     match status.type_ {
                         DeviceType::Phone => Cow::Borrowed(&config.device_phone_text),

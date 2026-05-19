@@ -5,19 +5,19 @@ pub fn default_update_interval() -> Duration {
 }
 
 pub fn default_device_not_found_text() -> String {
-    "".into()
+    "".into()
 }
 
 pub fn default_device_not_found_tooltip_text() -> String {
-    "".into()
+    "Device not found make sure kdeconnect is running and phone is connected".into()
 }
 
 pub fn default_is_charging_text() -> String {
-    "󱐋".into()
+    "󰂄 Charging ...".into()
 }
 
 pub fn default_isnt_charging_text() -> String {
-    "".into()
+    "󱟩 Not charging".into()
 }
 
 // Battery
@@ -57,9 +57,9 @@ pub fn default_isnt_charging_texts() -> Vec<String> {
 
 // Device type
 pub fn default_device_phone_text() -> String {
-    "".into()
+    "Phone ".into()
 }
 
 pub fn default_device_tablet_text() -> String {
-    "".into()
+    "Tablet ".into()
 }
