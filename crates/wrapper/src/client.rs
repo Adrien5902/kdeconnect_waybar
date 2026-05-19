@@ -2,7 +2,7 @@ use crate::{
     Result,
     device::{Device, DeviceId},
     notifications::Notification,
-    parsing::FromDbusMap,
+    parsing::FromDBusMap,
 };
 use dbus::{
     arg::{AppendAll, PropMap, ReadAll},
@@ -61,7 +61,7 @@ pub trait ClientObject<'c: 'p, 'p> {
 
     fn get_all<T>(&'c self, path: &'p Path, interface: &str) -> Result<T>
     where
-        T: FromDbusMap,
+        T: FromDBusMap,
     {
         let proxy = self.make_proxy(&path);
         let props: PropMap = proxy.get_all(interface)?;

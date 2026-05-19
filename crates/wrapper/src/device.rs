@@ -3,7 +3,7 @@ use crate::{
     Result,
     client::ClientObject,
     notifications::{Notification, NotificationId},
-    parsing::FromDbusMap,
+    parsing::FromDBusMap,
 };
 use dbus::arg::PropMap;
 use std::path::PathBuf;

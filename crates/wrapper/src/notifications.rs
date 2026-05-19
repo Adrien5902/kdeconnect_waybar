@@ -1,4 +1,4 @@
-use crate::{Result, client::ClientObject, device::Device, parsing::FromDbusMap};
+use crate::{Result, client::ClientObject, device::Device, parsing::FromDBusMap};
 use dbus::arg::PropMap;
 
 pub struct Notification<'a> {

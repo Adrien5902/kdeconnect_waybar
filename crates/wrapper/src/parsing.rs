@@ -1,7 +1,7 @@
 use dbus::arg::{PropMap, RefArg};
 
 use crate::Result;
-pub trait FromDbusMap: Sized {
+pub trait FromDBusMap: Sized {
     fn from_props(props: PropMap) -> Result<Self>;
 }
 
@@ -54,7 +54,7 @@ macro_rules! dbus_struct {
             )*
         }
 
-        impl FromDbusMap for $name {
+        impl FromDBusMap for $name {
             fn from_props(props: PropMap) -> Result<Self> {
                 use crate::error::Error;
                 use crate::parsing::FromDbusValue;
