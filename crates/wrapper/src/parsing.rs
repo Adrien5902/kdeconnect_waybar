@@ -1,5 +1,6 @@
-use color_eyre::eyre::Result;
 use dbus::arg::{PropMap, RefArg};
+
+use crate::Result;
 pub trait FromDbusMap: Sized {
     fn from_props(props: PropMap) -> Result<Self>;
 }
@@ -55,8 +56,8 @@ macro_rules! dbus_struct {
 
         impl FromDbusMap for $name {
             fn from_props(props: PropMap) -> Result<Self> {
-                use color_eyre::eyre::eyre;
-                use self::parsing::FromDbusValue;
+                use crate::error::Error;
+                use crate::parsing::FromDbusValue;
 
                 Ok(Self {
                     $(
@@ -65,10 +66,10 @@ macro_rules! dbus_struct {
 
                             let value = props
                                 .get(key)
-                                .ok_or_else(|| eyre!("missing property: {}", key))?;
+                                .ok_or_else(|| Error::DBusParsingFail(format!("missing property: {}", key)))?;
 
                             <$ty as FromDbusValue>::from_dbus(&*value.0)
-                                .ok_or_else(|| eyre!("invalid property type: {}", key))?
+                                .ok_or_else(|| Error::DBusParsingFail(format!("invalid property type: {}", key)))?
                         },
                     )*
                 })
@@ -114,7 +115,7 @@ macro_rules! dbus_enum {
         }
 
         impl std::str::FromStr for $name {
-            type Err = color_eyre::Report;
+            type Err = crate::error::Error;
 
             fn from_str(s: &str) -> Result<Self> {
                 $(
@@ -123,11 +124,11 @@ macro_rules! dbus_enum {
                     }
                 )*
 
-                Err(color_eyre::eyre::eyre!(
+                Err(Self::Err::DBusParsingFail(format!(
                     "invalid {} variant: {}",
                     stringify!($name),
                     s
-                ))
+                )))
             }
         }
 

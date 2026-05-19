@@ -1,10 +1,11 @@
 [package]
-name = "wrapper"
+name = "kdeconnect_wrapper"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 dbus.workspace = true
-color-eyre.workspace = true
+strum.workspace = true
+thiserror.workspace = true
 
 [lib]
