@@ -1,4 +1,4 @@
-use crate::config::{CONFIG_FILE, Config};
+use crate::config::Config;
 use color_eyre::eyre::{Result, eyre};
 use kdeconnect_wrapper::{
     client::Client,
@@ -22,14 +22,18 @@ fn main() -> Result<()> {
     let selected_config = args.get(1);
 
     let configs = Config::read_all()?;
+    let path = Config::config_file_path()?;
     let config = match selected_config {
         Some(name) => configs
             .iter()
             .find(|c| c.name.as_deref() == Some(name))
-            .ok_or(eyre!("No config with name {name} found at {CONFIG_FILE}")),
+            .ok_or(eyre!(
+                "No config with name {name} found at {}",
+                path.to_string_lossy()
+            )),
         None => configs
             .get(0)
-            .ok_or(eyre!("No config found at {CONFIG_FILE}")),
+            .ok_or(eyre!("No config found at {}", path.to_string_lossy())),
     }?;
 
     let update_interval = config.update_interval_secs;

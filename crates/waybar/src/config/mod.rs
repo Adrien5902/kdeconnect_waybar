@@ -1,14 +1,12 @@
 use color_eyre::eyre::{Context, Result, eyre};
 use schemars::{JsonSchema, Schema, schema_for};
 use serde::{Deserialize, Deserializer};
-use std::{fmt::Display, fs, time::Duration};
+use std::{fmt::Display, fs, path::PathBuf, time::Duration};
 
 use crate::formatter::Format;
 
 mod defaults;
 use defaults::*;
-
-pub const CONFIG_FILE: &'static str = "kdeconnect_waybar.json";
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct Config {
@@ -63,14 +61,21 @@ where
 }
 
 impl Config {
-    pub fn read_all() -> Result<Vec<Self>> {
-        let path = dirs::config_dir()
-            .ok_or(eyre!("Unable to find config dir"))?
-            .join(CONFIG_FILE);
+    pub const FILE_NAME: &'static str = "config.json";
 
+    pub fn dir() -> Result<PathBuf> {
+        Ok(dirs::config_dir().ok_or(eyre!("Unable to find config dir"))?)
+    }
+
+    pub fn config_file_path() -> Result<PathBuf> {
+        Ok(Self::dir()?.join(Self::FILE_NAME))
+    }
+
+    pub fn read_all() -> Result<Vec<Self>> {
+        let path = Self::config_file_path()?;
         let config_str = fs::read_to_string(&path)
             .with_context(move || path.into_os_string().into_string().unwrap())?;
-        let config = serde_json::from_str(&config_str)?;
+        let config = serde_json::from_str(&config_str).with_context(|| config_str)?;
 
         Ok(config)
     }
