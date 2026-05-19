@@ -1,4 +1,5 @@
-use crate::config::Config;
+use crate::config::ConfigFile;
+use clap::{Command, Parser, arg, command, value_parser};
 use color_eyre::eyre::{Result, eyre};
 use kdeconnect_wrapper::{
     client::Client,
@@ -8,25 +9,57 @@ use kdeconnect_wrapper::{
 use serde::Serialize;
 use std::{
     borrow::Cow,
-    env::args,
+    fs,
     io::{Write, stdout},
 };
 
 pub mod config;
 pub mod formatter;
 
+/// Simple program to greet a person
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Name of the config to use
+    #[arg(short, long)]
+    config_name: String,
+    /// Generate the config.schema.json file
+    #[arg(short, long, default_value_t = false)]
+    gen_schema: bool,
+}
+
 fn main() -> Result<()> {
     color_eyre::install()?;
-    let args: Vec<String> = args().collect();
+    let matches = command!()
+        .arg(arg!([name] "Optional name to operate on"))
+        .arg(
+            arg!(
+                -c --config <NAME> "Use config with a specific name"
+            )
+            .required(false)
+            .value_parser(value_parser!(String)),
+        )
+        .subcommand(
+            Command::new("gen_schema")
+                .about("Generates json schema file associated with config.json"),
+        )
+        .get_matches();
 
-    let selected_config = args.get(1);
+    if let Some(_matches) = matches.subcommand_matches("gen_schema") {
+        let path = ConfigFile::dir()?.join("config.schema.json");
+        fs::write(&path, serde_json::to_string_pretty(&ConfigFile::schema())?)?;
+        println!("generated json schema at {}", path.to_str().unwrap());
+        return Ok(());
+    }
 
-    let configs = Config::read_all()?;
-    let path = Config::config_file_path()?;
+    let selected_config = matches.get_one::<String>("config");
+
+    let configs = ConfigFile::read_all()?.configs;
+    let path = ConfigFile::config_file_path()?;
     let config = match selected_config {
         Some(name) => configs
             .iter()
-            .find(|c| c.name.as_deref() == Some(name))
+            .find(|c| c.name.as_deref() == Some(&name))
             .ok_or(eyre!(
                 "No config with name {name} found at {}",
                 path.to_string_lossy()

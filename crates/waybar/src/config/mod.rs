@@ -9,6 +9,11 @@ mod defaults;
 use defaults::*;
 
 #[derive(Debug, Deserialize, JsonSchema)]
+pub struct ConfigFile {
+    pub configs: Vec<Config>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct Config {
     pub name: Option<String>,
     pub device_id: Option<String>,
@@ -19,7 +24,7 @@ pub struct Config {
 
     #[schemars(with = "String")]
     pub format: Format,
-    #[schemars(with = "String")]
+    #[schemars(with = "Option<String>")]
     pub tooltip_format: Option<Format>,
 
     #[serde(default = "default_device_not_found_text")]
@@ -60,7 +65,7 @@ where
     Ok(Duration::from_secs_f64(f64::deserialize(d)?))
 }
 
-impl Config {
+impl ConfigFile {
     pub const DIR_NAME: &'static str = env!("CARGO_PKG_NAME");
     pub const FILE_NAME: &'static str = "config.json";
 
@@ -74,7 +79,7 @@ impl Config {
         Ok(Self::dir()?.join(Self::FILE_NAME))
     }
 
-    pub fn read_all() -> Result<Vec<Self>> {
+    pub fn read_all() -> Result<Self> {
         let path = Self::config_file_path()?;
         let config_str = fs::read_to_string(&path)
             .with_context(move || path.into_os_string().into_string().unwrap())?;
