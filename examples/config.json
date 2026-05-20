@@ -3,14 +3,33 @@
 	"configs": [
 		{
 			"update_interval_secs": 5,
-			"format": ": {Battery:ChargeTexts}%",
-			"tooltip_format": "Device type: {DeviceInfo:DeviceTypeText}\nBattery status: {Battery:IsChargingText}",
+			"format": ": {Battery:ChargePercent}% {Battery:ChargeTexts} , {Notification:Grouped}",
+			"tooltip_format": "Device type: {DeviceInfo:DeviceTypeText}\nBattery status: {Battery:IsChargingText}\nNotifications:\n{Notification:Single}",
 			"device_not_found_text": "",
 			"device_not_found_tooltip_text": "Device not found make sure kdeconnect is running and phone is connected",
 			"device_phone_text": "Phone ",
 			"device_tablet_text": "Tablet ",
 			"is_charging_text": "󰂄 Charging ...",
 			"isnt_charging_text": "󱟩 Not charging",
+			"notification_grouped_format": "{CustomIcon} {CountText} ",
+			"notification_single_format": "  -{CustomIcon}: {Title}\n      {Content}",
+			"app_icons": {
+				"Instagram": "",
+				"Snapchat": "",
+				"Youtube": "󰗃"
+			},
+			"notifications_count_text": {
+				"1": "󰲠",
+				"2": "󰲢",
+				"3": "󰲤",
+				"4": "󰲦",
+				"5": "󰲨",
+				"6": "󰲪",
+				"7": "󰲬",
+				"8": "󰲮",
+				"9": "󰲰",
+				"0": "󰲲"
+			},
 			"is_charging_texts": [
 				"󰢜",
 				"󰂆",

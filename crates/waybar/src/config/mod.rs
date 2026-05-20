@@ -1,9 +1,8 @@
+use crate::formatter::{Format, field::FieldCategory, notification::NotificationFormatField};
 use color_eyre::eyre::{Context, Result, eyre};
 use schemars::{JsonSchema, Schema, schema_for};
 use serde::{Deserialize, Deserializer};
-use std::{fmt::Display, fs, path::PathBuf, time::Duration};
-
-use crate::formatter::Format;
+use std::{collections::HashMap, fmt::Display, fs, path::PathBuf, time::Duration};
 
 mod defaults;
 use defaults::*;
@@ -33,10 +32,10 @@ pub struct Config {
 
     #[schemars(with = "String")]
     /// The default format used for the module text
-    pub format: Format,
+    pub format: Format<FieldCategory>,
     #[schemars(with = "Option<String>")]
     /// The default format used for the module tooltip text
-    pub tooltip_format: Option<Format>,
+    pub tooltip_format: Option<Format<FieldCategory>>,
 
     #[serde(default = "default_device_not_found_text")]
     /// The format used for the module text when kdeconnect isn't running or when device isn't connected
@@ -86,6 +85,14 @@ pub struct Config {
     /// Will replace {DeviceInfo:DeviceType} in any format if device is a tablet
     /// e.g. `"Tablet "`
     pub device_tablet_text: String,
+
+    #[schemars(with = "Option<String>")]
+    pub notification_grouped_format: Format<NotificationFormatField>,
+    #[schemars(with = "Option<String>")]
+    pub notification_single_format: Format<NotificationFormatField>,
+    pub notifications_count_text: HashMap<i64, String>,
+    #[serde(default)]
+    pub app_icons: HashMap<String, String>,
 }
 
 impl Display for Config {

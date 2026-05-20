@@ -1,12 +1,11 @@
 use super::PATH_SEPARATOR;
-use crate::config::Config;
+use crate::{config::Config, formatter::FieldFormat};
 use color_eyre::eyre::{Context, Report, Result, eyre};
 use kdeconnect_wrapper::{
     device::{BatteryStatus, Device, DeviceInfo, DeviceType},
     notifications::NotificationData,
 };
-use std::str::FromStr;
-use std::{borrow::Cow, sync::OnceLock};
+use std::{borrow::Cow, str::FromStr, sync::OnceLock};
 use strum::EnumString;
 
 #[derive(Debug, Clone, Copy)]
@@ -23,8 +22,8 @@ pub enum DeviceInfoField {
 
 #[derive(Debug, Clone, Copy, EnumString)]
 pub enum NotificationField {
-    Ids,
-    Icons,
+    Grouped,
+    Single,
 }
 
 #[derive(Debug, Clone, Copy, EnumString)]
@@ -38,10 +37,17 @@ impl FromStr for FieldCategory {
     type Err = Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (category, field) = s
-            .split_once(PATH_SEPARATOR)
-            // TODO : Add error message
-            .ok_or(eyre!("expected a category"))?;
+        let split: Vec<_> = s.split(PATH_SEPARATOR).collect();
+
+        // TODO : Add better error message
+        let category = *split
+            .get(0)
+            .ok_or(eyre!("expected a category, Syntax: Category:Field"))
+            .with_context(|| s.to_owned())?;
+        let field = *split
+            .get(1)
+            .ok_or(eyre!("expected a field, Syntax: Category:Field"))
+            .with_context(|| s.to_owned())?;
 
         match category {
             "Battery" => Ok(Self::Battery(field.parse()?)),
@@ -80,7 +86,7 @@ impl DeviceCategoryDataCache {
 
     pub fn get_notifications(&self, device: &Device) -> Result<&Vec<NotificationData>> {
         Ok(self.notification.get_or_try_init(|| {
-            let notifications: Vec<NotificationData> = device
+            let mut notifications: Vec<NotificationData> = device
                 .get_notifications()?
                 .into_iter()
                 .map(|n| {
@@ -88,6 +94,7 @@ impl DeviceCategoryDataCache {
                     Ok(d)
                 })
                 .collect::<Result<_, Report>>()?;
+            notifications.sort_by(|a, b| a.app_name.cmp(&b.app_name));
 
             Ok::<Vec<NotificationData>, Report>(notifications)
         })?)
@@ -101,7 +108,7 @@ impl FieldCategory {
         config: &'a Config,
         cache: &DeviceCategoryDataCache,
     ) -> Result<Cow<'a, str>> {
-        Ok(match *self {
+        let s: Cow<'a, str> = match *self {
             FieldCategory::Battery(f) => {
                 let status = cache.get_battery(device)?;
 
@@ -152,25 +159,20 @@ impl FieldCategory {
                     }
                 }
             },
-            FieldCategory::Notification(_f) => {
-                todo!("Impl notifications")
-                // let notifications: Vec<NotificationData> = device
-                //     .get_notifications()?
-                //     .into_iter()
-                //     .map(|n| n.get_data())
-                //     .collect::<Result<_>>()?;
+            FieldCategory::Notification(f) => {
+                let notifications = cache.get_notifications(device)?;
+                let s = f.to_string(notifications, config)?;
 
-                // match f {
-                //     NotificationDataField::Icons => notifications
-                //         .iter()
-                //         .map(|n| n.icon_path)
-                //         .collect::<Vec<String>>()
-                //         .join(" "),
-                //         NotificationDataField::Ids => {
-
-                //         }
-                // }
+                Cow::Owned(s)
             }
-        })
+        };
+
+        Ok(s)
+    }
+}
+
+impl FieldFormat for FieldCategory {
+    fn parse(s: &str) -> Result<Self> {
+        Ok(s.parse()?)
     }
 }
