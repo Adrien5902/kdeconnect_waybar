@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::{config::Config, formatter::field::DeviceCategoryDataCache};
 use color_eyre::eyre::{Report, Result};
 use kdeconnect_wrapper::device::Device;
 use serde::{Deserialize, Deserializer};
@@ -13,7 +13,7 @@ pub struct Format {
 
 #[derive(Debug)]
 pub enum Chunk {
-    Field(field::FieldKind),
+    Field(field::FieldCategory),
     Str(String),
 }
 
@@ -36,7 +36,7 @@ impl Format {
                     }
                 }
                 CLOSING_CHAR => {
-                    let field = field::FieldKind::from_str(&current_buffer)?;
+                    let field = field::FieldCategory::from_str(&current_buffer)?;
                     chunks.push(Chunk::Field(field));
                     current_buffer = String::new();
                 }
@@ -52,18 +52,28 @@ impl Format {
     }
 
     pub fn to_string(&self, device: &Device, config: &Config) -> Result<String> {
+        let cache = DeviceCategoryDataCache::default();
         self.chunks
             .iter()
-            .map(|chunk| chunk.to_str(device, config).map(|cow| cow.to_owned()))
+            .map(|chunk| {
+                chunk
+                    .to_str(device, config, &cache)
+                    .map(|cow| cow.to_owned())
+            })
             .collect::<Result<String>>()
     }
 }
 
 impl Chunk {
-    pub fn to_str<'a>(&'a self, device: &Device, config: &'a Config) -> Result<Cow<'a, str>> {
+    pub fn to_str<'a>(
+        &'a self,
+        device: &Device,
+        config: &'a Config,
+        cache: &DeviceCategoryDataCache,
+    ) -> Result<Cow<'a, str>> {
         match self {
             Chunk::Str(s) => Ok(Cow::Borrowed(s)),
-            Chunk::Field(f) => Ok(f.get_from_device(device, config)?),
+            Chunk::Field(f) => Ok(f.get_from_device(device, config, &cache)?),
         }
     }
 }

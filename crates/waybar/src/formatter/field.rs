@@ -1,13 +1,16 @@
 use super::PATH_SEPARATOR;
 use crate::config::Config;
 use color_eyre::eyre::{Context, Report, Result, eyre};
-use kdeconnect_wrapper::device::{Device, DeviceType};
-use std::borrow::Cow;
+use kdeconnect_wrapper::{
+    device::{BatteryStatus, Device, DeviceInfo, DeviceType},
+    notifications::NotificationData,
+};
 use std::str::FromStr;
+use std::{borrow::Cow, sync::OnceLock};
 use strum::EnumString;
 
 #[derive(Debug, Clone, Copy)]
-pub enum FieldKind {
+pub enum FieldCategory {
     DeviceInfo(DeviceInfoField),
     Battery(BatteryField),
     Notification(NotificationField),
@@ -31,14 +34,14 @@ pub enum BatteryField {
     ChargeTexts,
 }
 
-impl FromStr for FieldKind {
+impl FromStr for FieldCategory {
     type Err = Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (category, field) = s
             .split_once(PATH_SEPARATOR)
             // TODO : Add error message
-            .ok_or(eyre!("expected a category with "))?;
+            .ok_or(eyre!("expected a category"))?;
 
         match category {
             "Battery" => Ok(Self::Battery(field.parse()?)),
@@ -55,11 +58,53 @@ pub fn failed_to_parse_field_kind(s: &str) -> Report {
     eyre!("{}", s)
 }
 
-impl FieldKind {
-    pub fn get_from_device<'a>(&self, device: &Device, config: &'a Config) -> Result<Cow<'a, str>> {
+#[derive(Debug, Default)]
+pub struct DeviceCategoryDataCache {
+    device_info: OnceLock<DeviceInfo>,
+    battery: OnceLock<BatteryStatus>,
+    notification: OnceLock<Vec<NotificationData>>,
+}
+
+impl DeviceCategoryDataCache {
+    pub fn get_device_info(&self, device: &Device) -> Result<&DeviceInfo> {
+        Ok(self
+            .device_info
+            .get_or_try_init(|| device.get_device_info())?)
+    }
+
+    pub fn get_battery(&self, device: &Device) -> Result<&BatteryStatus> {
+        Ok(self
+            .battery
+            .get_or_try_init(|| device.get_battery_status())?)
+    }
+
+    pub fn get_notifications(&self, device: &Device) -> Result<&Vec<NotificationData>> {
+        Ok(self.notification.get_or_try_init(|| {
+            let notifications: Vec<NotificationData> = device
+                .get_notifications()?
+                .into_iter()
+                .map(|n| {
+                    let d = n.get_data()?;
+                    Ok(d)
+                })
+                .collect::<Result<_, Report>>()?;
+
+            Ok::<Vec<NotificationData>, Report>(notifications)
+        })?)
+    }
+}
+
+impl FieldCategory {
+    pub fn get_from_device<'a>(
+        &self,
+        device: &Device,
+        config: &'a Config,
+        cache: &DeviceCategoryDataCache,
+    ) -> Result<Cow<'a, str>> {
         Ok(match *self {
-            FieldKind::Battery(f) => {
-                let status = device.get_battery_status()?;
+            FieldCategory::Battery(f) => {
+                let status = cache.get_battery(device)?;
+
                 match f {
                     BatteryField::ChargePercent => Cow::Owned(status.charge.to_string()),
                     BatteryField::IsChargingText => {
@@ -98,16 +143,16 @@ impl FieldKind {
                     }
                 }
             }
-            FieldKind::DeviceInfo(f) => match f {
+            FieldCategory::DeviceInfo(f) => match f {
                 DeviceInfoField::DeviceTypeText => {
-                    let status = device.get_device_info()?;
+                    let status = cache.get_device_info(device)?;
                     match status.type_ {
                         DeviceType::Phone => Cow::Borrowed(&config.device_phone_text),
                         DeviceType::Tablet => Cow::Borrowed(&config.device_tablet_text),
                     }
                 }
             },
-            FieldKind::Notification(_f) => {
+            FieldCategory::Notification(_f) => {
                 todo!("Impl notifications")
                 // let notifications: Vec<NotificationData> = device
                 //     .get_notifications()?

@@ -1,3 +1,5 @@
+#![feature(once_cell_try)]
+
 use crate::config::ConfigFile;
 use clap::{Command, Parser, arg, command, value_parser};
 use color_eyre::eyre::{Result, eyre};
