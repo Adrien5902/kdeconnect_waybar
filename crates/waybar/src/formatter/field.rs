@@ -74,29 +74,40 @@ pub fn failed_to_parse_field_kind(s: &str) -> Report {
     eyre!("{}", s)
 }
 
-#[derive(Debug, Default)]
-pub struct DeviceCategoryDataCache {
+#[derive(Debug)]
+pub struct DeviceCategoryDataCache<'a> {
+    device: &'a Device<'a>,
     device_info: OnceLock<DeviceInfoData>,
     battery: OnceLock<BatteryStatus>,
     notification: OnceLock<Vec<NotificationData>>,
 }
 
-impl DeviceCategoryDataCache {
-    pub fn get_device_info(&self, device: &Device) -> Result<&DeviceInfoData> {
+impl<'a> DeviceCategoryDataCache<'a> {
+    pub fn new(device: &'a Device<'a>) -> Self {
+        Self {
+            device,
+            device_info: OnceLock::new(),
+            battery: OnceLock::new(),
+            notification: OnceLock::new(),
+        }
+    }
+
+    pub fn get_device_info(&self) -> Result<&DeviceInfoData> {
         Ok(self
             .device_info
-            .get_or_try_init(|| device.get_device_info())?)
+            .get_or_try_init(|| self.device.get_device_info())?)
     }
 
-    pub fn get_battery(&self, device: &Device) -> Result<&BatteryStatus> {
+    pub fn get_battery(&self) -> Result<&BatteryStatus> {
         Ok(self
             .battery
-            .get_or_try_init(|| device.get_battery_status())?)
+            .get_or_try_init(|| self.device.get_battery_status())?)
     }
 
-    pub fn get_notifications(&self, device: &Device) -> Result<&Vec<NotificationData>> {
+    pub fn get_notifications(&self) -> Result<&Vec<NotificationData>> {
         Ok(self.notification.get_or_try_init(|| {
-            let mut notifications: Vec<NotificationData> = device
+            let mut notifications: Vec<NotificationData> = self
+                .device
                 .get_notifications()?
                 .into_iter()
                 .map(|n| {
@@ -114,13 +125,12 @@ impl DeviceCategoryDataCache {
 impl FieldCategory {
     pub fn get_from_device<'a>(
         &self,
-        device: &Device,
         config: &'a Config,
         cache: &DeviceCategoryDataCache,
     ) -> Result<Cow<'a, str>> {
         let s: Cow<'a, str> = match *self {
             FieldCategory::Battery(f) => {
-                let status = cache.get_battery(device)?;
+                let status = cache.get_battery()?;
 
                 match f {
                     Battery::ChargePercent => Cow::Owned(status.charge.to_string()),
@@ -162,7 +172,7 @@ impl FieldCategory {
             }
             FieldCategory::DeviceInfo(f) => match f {
                 DeviceInfo::DeviceTypeText => {
-                    let status = cache.get_device_info(device)?;
+                    let status = cache.get_device_info()?;
                     match status.type_ {
                         DeviceType::Phone => Cow::Borrowed(&config.device_phone_text),
                         DeviceType::Tablet => Cow::Borrowed(&config.device_tablet_text),
@@ -170,7 +180,7 @@ impl FieldCategory {
                 }
             },
             FieldCategory::Notification(f) => {
-                let notifications = cache.get_notifications(device)?;
+                let notifications = cache.get_notifications()?;
                 let s = f.to_string(notifications, config)?;
 
                 Cow::Owned(s)

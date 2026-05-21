@@ -6,13 +6,19 @@ use crate::{
     parsing::FromDBusMap,
 };
 use dbus::arg::PropMap;
-use std::path::PathBuf;
+use std::{fmt::Debug, path::PathBuf};
 
 pub type DeviceId = String;
 
 pub struct Device<'a> {
     pub id: DeviceId,
     pub(crate) client: &'a Client,
+}
+
+impl<'a> Debug for Device<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&format!("{{id: {}}}", self.id))
+    }
 }
 
 impl<'a> Device<'a> {

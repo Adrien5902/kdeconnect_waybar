@@ -1,6 +1,9 @@
 #![feature(once_cell_try)]
 
-use crate::config::ConfigFile;
+use crate::{
+    config::{Config, ConfigFile},
+    formatter::DeviceCategoryDataCache,
+};
 use clap::{Command, Parser, arg, command, value_parser};
 use color_eyre::eyre::{Result, eyre};
 use kdeconnect_wrapper::{
@@ -83,6 +86,7 @@ fn main() -> Result<()> {
     let mut stdout_lock = stdout().lock();
 
     loop {
+        // TODO: Catch errors and restart rather than panic
         let devices = match client.devices() {
             Ok(v) => Some(v),
             Err(e) => {
@@ -92,6 +96,7 @@ fn main() -> Result<()> {
 
                 match de.kind {
                     // This means connection to kdeconnect failed
+                    // In this case we should proceed as if no device was found
                     DBusErrorKind::UnknownObject => None,
                     _ => return Err(e.into()),
                 }
@@ -120,17 +125,20 @@ struct OutputFormat<'a> {
 }
 
 impl<'a> OutputFormat<'a> {
-    fn format_output(device_opt: Option<&Device>, config: &'a config::Config) -> Result<Self> {
+    fn format_output(device_opt: Option<&Device>, config: &'a Config) -> Result<Self> {
         let Some(device) = device_opt else {
-            return Ok(OutputFormat {
-                text: Cow::Borrowed(&config.device_not_found_text),
-                tooltip: Some(Cow::Borrowed(&config.device_not_found_tooltip_text)),
-            });
+            return Ok(Self::device_not_found(config));
         };
+        let cache = DeviceCategoryDataCache::new(device);
+        let info = cache.get_device_info()?;
 
-        let text = config.format.to_string(device, config)?;
+        if !info.is_reachable {
+            return Ok(Self::device_not_found(config));
+        }
+
+        let text = config.format.to_string(config, &cache)?;
         let tooltip = match &config.tooltip_format {
-            Some(f) => Some(f.to_string(device, config)?),
+            Some(f) => Some(f.to_string(config, &cache)?),
             None => None,
         };
 
@@ -138,5 +146,12 @@ impl<'a> OutputFormat<'a> {
             text: Cow::Owned(text),
             tooltip: tooltip.map(|s| Cow::Owned(s)),
         })
+    }
+
+    fn device_not_found(config: &'a Config) -> Self {
+        OutputFormat {
+            text: Cow::Borrowed(&config.device_not_found_text),
+            tooltip: Some(Cow::Borrowed(&config.device_not_found_tooltip_text)),
+        }
     }
 }

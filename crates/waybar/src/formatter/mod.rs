@@ -1,6 +1,5 @@
 use crate::config::Config;
 use color_eyre::eyre::{Report, Result};
-use kdeconnect_wrapper::device::Device;
 use serde::{Deserialize, Deserializer};
 use std::{borrow::Cow, fmt::Debug, str::FromStr};
 
@@ -62,15 +61,10 @@ impl<T: FieldFormat> Format<T> {
 }
 
 impl Format<FieldCategory> {
-    pub fn to_string(&self, device: &Device, config: &Config) -> Result<String> {
-        let cache = DeviceCategoryDataCache::default();
+    pub fn to_string(&self, config: &Config, cache: &DeviceCategoryDataCache) -> Result<String> {
         self.chunks
             .iter()
-            .map(|chunk| {
-                chunk
-                    .to_str(device, config, &cache)
-                    .map(|cow| cow.to_owned())
-            })
+            .map(|chunk| chunk.to_str(config, &cache).map(|cow| cow.to_owned()))
             .collect::<Result<String>>()
     }
 }
@@ -78,13 +72,12 @@ impl Format<FieldCategory> {
 impl Chunk<FieldCategory> {
     pub fn to_str<'a>(
         &'a self,
-        device: &Device,
         config: &'a Config,
         cache: &DeviceCategoryDataCache,
     ) -> Result<Cow<'a, str>> {
         match self {
             Chunk::Str(s) => Ok(Cow::Borrowed(s)),
-            Chunk::Field(f) => Ok(f.get_from_device(device, config, &cache)?),
+            Chunk::Field(f) => Ok(f.get_from_device(config, &cache)?),
         }
     }
 }
