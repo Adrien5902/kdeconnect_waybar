@@ -16,7 +16,9 @@
 			"app_icons": {
 				"Instagram": "",
 				"Snapchat": "",
-				"Youtube": "󰗃"
+				"YouTube": "󰗃",
+				"WhatsApp": "",
+				"Discord": ""
 			},
 			"notifications_count_text": {
 				"1": "󰲠",

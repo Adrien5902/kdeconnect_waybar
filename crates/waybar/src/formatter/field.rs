@@ -9,6 +9,7 @@ use std::{borrow::Cow, str::FromStr, sync::OnceLock};
 use strum::EnumString;
 
 #[derive(Debug, Clone, Copy)]
+/// The different categories that can be matched in any [crate::formatter::GlobalFormat]
 pub enum FieldCategory {
     DeviceInfo(DeviceInfoField),
     Battery(BatteryField),
@@ -16,20 +17,29 @@ pub enum FieldCategory {
 }
 
 #[derive(Debug, Clone, Copy, EnumString)]
+/// Used to display the different informations related to the device
 pub enum DeviceInfoField {
+    /// Will be replaced by device_phone_text or device_tablet_text depending on if the device is a phone or a tablet
     DeviceTypeText,
 }
 
 #[derive(Debug, Clone, Copy, EnumString)]
+/// Use to display information about the device's notifications
 pub enum NotificationField {
     Grouped,
     Single,
 }
 
 #[derive(Debug, Clone, Copy, EnumString)]
+/// Use to display information about the device's battery
 pub enum BatteryField {
+    /// Will be replaced with how much battery the device has left
+    /// (this is measured in percentage, however the percent sign '%' isn't included you may wanna add it after in your [crate::formatter::GlobalFormat])
     ChargePercent,
+    /// Will be replaced to is_charging_text or isnt_charging_text from [Config] depending on wherever the device is charging or not
     IsChargingText,
+    /// Will be replaced to is_charging_texts or isnt_charging_texts from [Config]
+    /// depends on wherever the device is charging or not and the current charge see charge_ranges in [Config] for more information
     ChargeTexts,
 }
 

@@ -1,4 +1,4 @@
-use crate::formatter::{Format, field::FieldCategory, notification::NotificationFormatField};
+use crate::formatter::{GlobalFormat, notification::NotificationFormat};
 use color_eyre::eyre::{Context, Result, eyre};
 use schemars::{JsonSchema, Schema, schema_for};
 use serde::{Deserialize, Deserializer};
@@ -31,26 +31,26 @@ pub struct Config {
     pub update_interval_secs: Duration,
 
     #[schemars(with = "String")]
-    /// The default format used for the module text
-    pub format: Format<FieldCategory>,
+    /// The default [GlobalFormat] used for the module text
+    pub format: GlobalFormat,
     #[schemars(with = "Option<String>")]
-    /// The default format used for the module tooltip text
-    pub tooltip_format: Option<Format<FieldCategory>>,
+    /// The default GlobalFormat used for the module tooltip text
+    pub tooltip_format: Option<GlobalFormat>,
 
     #[serde(default = "default_device_not_found_text")]
-    /// The format used for the module text when kdeconnect isn't running or when device isn't connected
+    /// The [GlobalFormat] used for the module text when kdeconnect isn't running or when device isn't connected
     pub device_not_found_text: String,
     #[serde(default = "default_device_not_found_tooltip_text")]
-    /// The format used for the module tooltip text when kdeconnect isn't running or when device isn't connected
+    /// The [GlobalFormat] used for the module tooltip text when kdeconnect isn't running or when device isn't connected
     pub device_not_found_tooltip_text: String,
 
     #[serde(default = "default_is_charging_text")]
-    /// The text replacing {Battery:IsChargingText} (in any format) when device is charging
+    /// The text replacing {Battery::IsChargingText} (in any [GlobalFormat]) when device is charging
     /// Can contain Nerd-Font icons
     /// e.g. `"󰂄 Charging... "`
     pub is_charging_text: String,
     #[serde(default = "default_isnt_charging_text")]
-    /// The text replacing {Battery:IsChargingText} (in any format) when device isn't charging
+    /// The text replacing {Battery::IsChargingText} (in any [GlobalFormat]) when device isn't charging
     /// Can contain Nerd-Font icons
     /// `"󱟩 Not charging"`
     pub isnt_charging_text: String,
@@ -63,41 +63,54 @@ pub struct Config {
     #[serde(default = "default_is_charging_texts")]
     /// Can contain Nerd-Font icons
     /// used alongside charge_ranges, must contains len(charge_ranges)+1 strings
-    /// When device is charging will replace {Battery:ChargeTexts} in any format with the nth string,
+    /// When device is charging will replace {[Battery::ChargeTexts]} in any format with the nth string,
     /// corresponding to the nth charge range the device battery charge is into
     /// e.g. ["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"] or ["Critical", "Low", "Good", "Super-charged"]
     pub is_charging_texts: Vec<String>,
     #[serde(default = "default_isnt_charging_texts")]
-    /// Can contain Nerd-Font icons
     /// used alongside charge_ranges, must contains len(charge_ranges)+1 strings
-    /// When device isn't charging will replace {Battery:ChargeTexts} in any format with the nth string,
+    /// When device isn't charging will replace {Battery::ChargeTexts} in any format with the nth string,
     /// corresponding to the nth charge range the device battery charge is into
     /// e.g. ["󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"] or ["Critical", "Low", "Good", "Super-charged"]
+    /// Can contain Nerd-Font icons
     pub isnt_charging_texts: Vec<String>,
 
     #[serde(default = "default_device_phone_text")]
-    /// Can contain Nerd-Font icons
-    /// Will replace {DeviceInfo:DeviceType} in any format if device is a phone
+    /// Will replace {DeviceInfo:DeviceType} in any [GlobalFormat] if device is a phone
     ///  e.g. `"Phone "`,
+    /// Can contain Nerd-Font icons
     pub device_phone_text: String,
     #[serde(default = "default_device_tablet_text")]
-    /// Can contain Nerd-Font icons
-    /// Will replace {DeviceInfo:DeviceType} in any format if device is a tablet
+    /// Will replace {DeviceInfo:DeviceType} in any [GlobalFormat] if device is a tablet
     /// e.g. `"Tablet "`
+    /// Can contain Nerd-Font icons
     pub device_tablet_text: String,
 
     #[schemars(with = "Option<String>")]
-    pub notification_grouped_format: Format<NotificationFormatField>,
+    /// Groups notifications per app, and for each app replaces {Notification:Grouped} with the given [NotificationFormat]
+    pub notification_grouped_format: NotificationFormat,
     #[schemars(with = "Option<String>")]
-    pub notification_single_format: Format<NotificationFormatField>,
+    /// For each notification replaces {Notification:Single} with the given [NotificationFormat]
+    pub notification_single_format: NotificationFormat,
+    /// A dictionary with ints as keys and text strings as values
+    /// When in a Grouped [NotificationFormat] replaces {CountText} with the given string matching the amount of notifications for this app
+    /// 0 is a special key that is used when the notification count of the app doesn't match any other keys
+    /// e.g.:
+    /// - `{1: "One", 2: "Two", 0: "Three or more"}`
+    /// - or with Nerd-Font icons `{"1": "󰲠","2": "󰲢","3": "󰲤","4": "󰲦","5": "󰲨","6": "󰲪","7": "󰲬","8": "󰲮","9": "󰲰","0": "󰲲"}`
+    /// Can contain Nerd-Font icons
     pub notifications_count_text: HashMap<i64, String>,
     #[serde(default)]
+    /// When in a Grouped [NotificationFormat] replaces {CountText} with the given string matching the amount of notifications for this app
+    /// Recommended with Nerd-Font icons
+    /// A dictionary with app names as keys and text strings as values
+    /// WARNING: app names are case-sensitive: for example youtube should be YouTube
     pub app_icons: HashMap<String, String>,
 }
 
 impl Display for Config {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // Needs better implementation, used in context when config produces errors
+        // TODO: Needs better implementation, used in context when config produces errors
         f.write_str(&format!("{:?}", self))
     }
 }

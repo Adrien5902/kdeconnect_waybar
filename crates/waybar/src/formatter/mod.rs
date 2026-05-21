@@ -9,6 +9,9 @@ use std::{borrow::Cow, fmt::Debug, str::FromStr};
 
 pub mod field;
 pub mod notification;
+
+pub type GlobalFormat = Format<FieldCategory>;
+
 pub trait FieldFormat: Sized {
     fn parse(s: &str) -> Result<Self>;
 }
