@@ -142,12 +142,12 @@ impl FieldCategory {
                         }
                     }
                     Battery::ChargeTexts => {
-                        let mut index: Option<usize> = None;
+                        let mut index = 0;
                         for (i, until_charge) in config.charge_ranges.iter().enumerate() {
-                            if status.charge < *until_charge {
-                                index = Some(i);
+                            if status.charge <= *until_charge {
                                 break;
                             }
+                            index = i + 1;
                         }
 
                         let texts = if status.is_charging {
@@ -157,11 +157,7 @@ impl FieldCategory {
                         };
 
                         let text = texts
-                            .get(
-                                index
-                                    .ok_or(eyre!("no charge_ranges defined in config"))
-                                    .with_context(|| config.to_string())?,
-                            )
+                            .get(index)
                             .ok_or(eyre!("No format specified for this battery range"))
                             .with_context(|| config.to_string())
                             .with_context(|| format!("{:?}", texts))?;
