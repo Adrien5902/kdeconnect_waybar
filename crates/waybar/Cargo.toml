@@ -14,3 +14,4 @@ strum.workspace = true
 thiserror.workspace = true
 schemars.workspace = true
 clap.workspace = true
+notify.workspace = true

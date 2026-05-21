@@ -11,11 +11,13 @@ use kdeconnect_wrapper::{
     device::Device,
     error::{DBusErrorKind, Error},
 };
+use notify::{Event, EventKind, Watcher};
 use serde::Serialize;
 use std::{
     borrow::Cow,
     fs,
     io::{Write, stdout},
+    sync::{Arc, mpsc},
 };
 
 pub mod config;
@@ -65,25 +67,45 @@ fn main() -> Result<()> {
     }
 
     let selected_config = matches.get_one::<String>("config");
-
-    let configs = ConfigFile::read_all()?.configs;
     let path = ConfigFile::config_file_path()?;
-    let config = match selected_config {
-        Some(name) => configs
-            .iter()
-            .find(|c| c.name.as_deref() == Some(&name))
-            .ok_or(eyre!(
-                "No config with name {name} found at {}",
-                path.to_string_lossy()
-            )),
-        None => configs
-            .get(0)
-            .ok_or(eyre!("No config found at {}", path.to_string_lossy())),
-    }?;
 
-    let update_interval = config.update_interval_secs;
-    let client = Client::new(update_interval)?;
+    let mut configs: Vec<Arc<Config>> = Vec::new();
+
+    let mut refresh_configs = || {
+        println!("{:?}", "Reloading config");
+
+        configs = ConfigFile::read_all()?
+            .configs
+            .into_iter()
+            .map(|c| Arc::new(c))
+            .collect();
+
+        let config = match selected_config {
+            Some(name) => configs
+                .iter()
+                .find(|c| c.name.as_deref() == Some(&name))
+                .ok_or(eyre!(
+                    "No config with name {name} found at {}",
+                    path.to_string_lossy()
+                )),
+            None => configs
+                .get(0)
+                .ok_or(eyre!("No config found at {}", path.to_string_lossy())),
+        }?
+        .clone();
+
+        let update_interval = config.update_interval_secs;
+        let client = Client::new(update_interval)?;
+        Ok::<_, color_eyre::eyre::Report>((config, update_interval, client))
+    };
+
+    let (mut config, mut update_interval, mut client) = refresh_configs()?;
+
     let mut stdout_lock = stdout().lock();
+
+    let (tx, rx) = mpsc::channel::<Result<Event, notify::Error>>();
+    let mut watcher = notify::recommended_watcher(tx)?;
+    watcher.watch(&path, notify::RecursiveMode::NonRecursive)?;
 
     loop {
         // TODO: Catch errors and restart rather than panic
@@ -110,11 +132,21 @@ fn main() -> Result<()> {
             None => devices.as_ref().and_then(|d| d.get(0)),
         };
 
-        let output = OutputFormat::format_output(device, config)?;
+        let output = OutputFormat::format_output(device, &config)?;
 
         writeln!(&mut stdout_lock, "{}", serde_json::to_string(&output)?)?;
 
-        std::thread::sleep(update_interval);
+        match rx.recv_timeout(update_interval) {
+            Ok(res) => match res?.kind {
+                EventKind::Modify(_) => (config, update_interval, client) = refresh_configs()?,
+                EventKind::Create(_) => (config, update_interval, client) = refresh_configs()?,
+                _ => (),
+            },
+            Err(e) => match e {
+                mpsc::RecvTimeoutError::Timeout => (),
+                _ => Err(e)?,
+            },
+        }
     }
 }
 

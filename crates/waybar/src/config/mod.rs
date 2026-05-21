@@ -92,6 +92,7 @@ pub struct Config {
     #[schemars(with = "Option<String>")]
     /// For each notification replaces {[`Notification::Single`]} with the given [`NotificationFormat`]
     pub notification_single_format: NotificationFormat,
+    #[serde(default)]
     /// A dictionary with ints as keys and text strings as values
     /// When in a [`Grouped`](Notification::Grouped) [`NotificationFormat`] replaces {[`CountText`](NotificationFormatField::CountText)} with the given string matching the amount of notifications for this app
     /// 0 is a special key that is used when the notification count of the app doesn't match any other keys
