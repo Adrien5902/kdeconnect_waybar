@@ -1,7 +1,4 @@
-use crate::{
-    config::Config,
-    formatter::field::{DeviceCategoryDataCache, FieldCategory},
-};
+use crate::config::Config;
 use color_eyre::eyre::{Report, Result};
 use kdeconnect_wrapper::device::Device;
 use serde::{Deserialize, Deserializer};
@@ -9,6 +6,8 @@ use std::{borrow::Cow, fmt::Debug, str::FromStr};
 
 pub mod field;
 pub mod notification;
+pub use field::*;
+pub use notification::*;
 
 pub type GlobalFormat = Format<FieldCategory>;
 
@@ -29,7 +28,7 @@ pub enum Chunk<T: FieldFormat> {
 
 const OPENING_CHAR: char = '{';
 const CLOSING_CHAR: char = '}';
-const PATH_SEPARATOR: char = ':';
+const PATH_SEPARATOR: &'static str = "::";
 
 impl<T: FieldFormat> Format<T> {
     pub fn parse(format: &str) -> Result<Self> {

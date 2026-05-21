@@ -1,7 +1,4 @@
-use crate::{
-    config::Config,
-    formatter::{Chunk, FieldFormat, Format, field::NotificationField},
-};
+use crate::{config::Config, formatter::*};
 use color_eyre::eyre::{Result, eyre};
 use kdeconnect_wrapper::notifications::NotificationData;
 use std::collections::BTreeMap;
@@ -9,10 +6,10 @@ use strum::EnumString;
 
 pub type NotificationFormat = Format<NotificationFormatField>;
 
-impl NotificationField {
+impl Notification {
     pub fn to_string(&self, notifications: &[NotificationData], config: &Config) -> Result<String> {
         Ok(match self {
-            NotificationField::Grouped => {
+            Notification::Grouped => {
                 let format = &config.notification_grouped_format;
                 // We use BTree map instead of HashMap because we don't want notification order to change
                 // So notifications are organized in app_name alphabetical order
@@ -56,7 +53,7 @@ impl NotificationField {
                     })
                     .collect::<Result<String>>()?
             }
-            NotificationField::Single => {
+            Notification::Single => {
                 let format = &config.notification_single_format;
                 notifications
                     .iter()
@@ -107,22 +104,22 @@ pub enum NotificationFormatField {
     AppName,
     /// A text field corresponding to the notification icon
     /// recommended with Nerd-Font icons
-    /// see config app_icons
+    /// see [`Config::app_icons`]
     CustomIcon,
 
-    /// Available for {Notification:Single} only
+    /// Available for {[`Notification::Single`]} only
     /// The title of the notification, corresponds the the bigger text
     Title,
-    /// Available for {Notification:Single} only
+    /// Available for {[`Notification::Single`]} only
     /// The content of the notification, corresponds the the smaller text under the title
     Content,
 
-    /// Available for {Notification:Grouped} only
+    /// Available for {[`Notification::Grouped`]} only
     /// The amount of notifications of this app, displayed as a number
     Count,
-    /// Available for {Notification:Grouped} only
+    /// Available for {[`Notification::Grouped`]} only
     /// The amount of notifications of this app, with custom display string like icons for example
-    /// see notifications_count_text in config for more details
+    /// see [`Config::notifications_count_text`] for more details
     CountText,
 }
 

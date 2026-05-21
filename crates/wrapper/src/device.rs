@@ -33,7 +33,7 @@ impl<'a> Device<'a> {
         self.get_all(&path, &interface)
     }
 
-    pub fn get_device_info(&self) -> Result<DeviceInfo> {
+    pub fn get_device_info(&self) -> Result<DeviceInfoData> {
         let path = self.path();
         let interface = Self::interface();
         self.get_all(&path, &interface)
@@ -76,7 +76,7 @@ dbus_struct! {
 
 dbus_struct! {
     #[derive(Debug)]
-    pub struct DeviceInfo {
+    pub struct DeviceInfoData {
         status_icon_name: String,
         is_paired: bool,
         is_reachable: bool,

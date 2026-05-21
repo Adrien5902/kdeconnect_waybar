@@ -1,45 +1,45 @@
 use super::PATH_SEPARATOR;
-use crate::{config::Config, formatter::FieldFormat};
+use crate::{config::Config, formatter::*};
 use color_eyre::eyre::{Context, Report, Result, eyre};
 use kdeconnect_wrapper::{
-    device::{BatteryStatus, Device, DeviceInfo, DeviceType},
+    device::{BatteryStatus, Device, DeviceInfoData, DeviceType},
     notifications::NotificationData,
 };
 use std::{borrow::Cow, str::FromStr, sync::OnceLock};
 use strum::EnumString;
 
 #[derive(Debug, Clone, Copy)]
-/// The different categories that can be matched in any [crate::formatter::GlobalFormat]
+/// The different categories that can be matched in any [`GlobalFormat`]
 pub enum FieldCategory {
-    DeviceInfo(DeviceInfoField),
-    Battery(BatteryField),
-    Notification(NotificationField),
+    DeviceInfo(DeviceInfo),
+    Battery(Battery),
+    Notification(Notification),
 }
 
 #[derive(Debug, Clone, Copy, EnumString)]
 /// Used to display the different informations related to the device
-pub enum DeviceInfoField {
-    /// Will be replaced by device_phone_text or device_tablet_text depending on if the device is a phone or a tablet
+pub enum DeviceInfo {
+    /// Will be replaced by [`Config::device_phone_text`] or [`Config::device_tablet_text`] depending on if the device is a phone or a tablet
     DeviceTypeText,
 }
 
 #[derive(Debug, Clone, Copy, EnumString)]
 /// Use to display information about the device's notifications
-pub enum NotificationField {
+pub enum Notification {
     Grouped,
     Single,
 }
 
 #[derive(Debug, Clone, Copy, EnumString)]
 /// Use to display information about the device's battery
-pub enum BatteryField {
+pub enum Battery {
     /// Will be replaced with how much battery the device has left
-    /// (this is measured in percentage, however the percent sign '%' isn't included you may wanna add it after in your [crate::formatter::GlobalFormat])
+    /// (this is measured in percentage, however the percent sign '%' isn't included you may wanna add it after in your [`GlobalFormat`])
     ChargePercent,
-    /// Will be replaced to is_charging_text or isnt_charging_text from [Config] depending on wherever the device is charging or not
+    /// Will be replaced to [`Config::is_charging_text`] or [`Config::isnt_charging_text`] from [`Config`] depending on wherever the device is charging or not
     IsChargingText,
-    /// Will be replaced to is_charging_texts or isnt_charging_texts from [Config]
-    /// depends on wherever the device is charging or not and the current charge see charge_ranges in [Config] for more information
+    /// Will be replaced to [`Config::is_charging_texts`] or [`Config::isnt_charging_texts`] from [`Config`]
+    /// depends on wherever the device is charging or not and the current charge see [`Config::charge_ranges`] in [`Config`] for more information
     ChargeTexts,
 }
 
@@ -76,13 +76,13 @@ pub fn failed_to_parse_field_kind(s: &str) -> Report {
 
 #[derive(Debug, Default)]
 pub struct DeviceCategoryDataCache {
-    device_info: OnceLock<DeviceInfo>,
+    device_info: OnceLock<DeviceInfoData>,
     battery: OnceLock<BatteryStatus>,
     notification: OnceLock<Vec<NotificationData>>,
 }
 
 impl DeviceCategoryDataCache {
-    pub fn get_device_info(&self, device: &Device) -> Result<&DeviceInfo> {
+    pub fn get_device_info(&self, device: &Device) -> Result<&DeviceInfoData> {
         Ok(self
             .device_info
             .get_or_try_init(|| device.get_device_info())?)
@@ -123,15 +123,15 @@ impl FieldCategory {
                 let status = cache.get_battery(device)?;
 
                 match f {
-                    BatteryField::ChargePercent => Cow::Owned(status.charge.to_string()),
-                    BatteryField::IsChargingText => {
+                    Battery::ChargePercent => Cow::Owned(status.charge.to_string()),
+                    Battery::IsChargingText => {
                         if status.is_charging {
                             Cow::Borrowed(&config.is_charging_text)
                         } else {
                             Cow::Borrowed(&config.isnt_charging_text)
                         }
                     }
-                    BatteryField::ChargeTexts => {
+                    Battery::ChargeTexts => {
                         let mut index: Option<usize> = None;
                         for (i, until_charge) in config.charge_ranges.iter().enumerate() {
                             if status.charge < *until_charge {
@@ -161,7 +161,7 @@ impl FieldCategory {
                 }
             }
             FieldCategory::DeviceInfo(f) => match f {
-                DeviceInfoField::DeviceTypeText => {
+                DeviceInfo::DeviceTypeText => {
                     let status = cache.get_device_info(device)?;
                     match status.type_ {
                         DeviceType::Phone => Cow::Borrowed(&config.device_phone_text),
