@@ -6,7 +6,7 @@
 //! this documentation assumes you have installed [Waybar](https://github.com/Alexays/Waybar/) and know how to configure it
 //! as well as [KDE Connect](https://kdeconnect.kde.org/) and already paired a device using it
 //!
-//! Check out [Installation] (not yet available) for detailed installation instructions
+//! Check out [Installation](https://github.com/Adrien5902/kdeconnect_waybar#-installation) for detailed installation instructions
 //!
 //! Once installed start by adding the module to your waybar's config :
 //! ```jsonc
