@@ -8,6 +8,13 @@ pub mod notification;
 pub use field::*;
 pub use notification::*;
 
+/// A kind of [`Format`]
+/// used in [`Config::format`], [`Config::tooltip_format`], and more, see [`Config`]
+///
+/// A string of text with special fields being replaced e.g. `"Battery: {Battery::ChargePercent}%"`
+///
+/// [`GlobalFormat`] fields are separated categories delimited by two colons (`::`),
+/// see [`FieldCategory`] for all the different categories available
 pub type GlobalFormat = Format<FieldCategory>;
 
 pub trait FieldFormat: Sized {
@@ -15,6 +22,14 @@ pub trait FieldFormat: Sized {
 }
 
 #[derive(Debug)]
+/// Any kind of format
+///
+/// Can contain Nerd-Font icons
+///
+/// Formats are strings of text that can contain special fields surrounded by braces (`{` and `}`),
+/// fields may are organized in categories and are then access with this syntax `{Category::Field}`
+///
+/// See [`GlobalFormat`] and [`NotificationFormat`] for more info
 pub struct Format<T: FieldFormat> {
     chunks: Vec<Chunk<T>>,
 }

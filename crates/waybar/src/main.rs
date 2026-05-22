@@ -1,9 +1,55 @@
+//! A highly configurable [KDE Connect](https://kdeconnect.kde.org/) module for [Waybar](https://github.com/Alexays/Waybar/)
+//!
+//! allows you to display many information about your mobile devices (phone or tablet)
+//! such as battery, notifications, ...
+//!
+//! this documentation assumes you have installed [Waybar](https://github.com/Alexays/Waybar/) and know how to configure it
+//! as well as [KDE Connect](https://kdeconnect.kde.org/) and already paired a device using it
+//!
+//! Check out [Installation] (not yet available) for detailed installation instructions
+//!
+//! Once installed start by adding the module to your waybar's config :
+//! ```jsonc
+//!~/.config/waybar/config.jsonc
+//!
+//!"custom/kdeconnect": {
+//!    "format": "{}",
+//!    "exec": "kdeconnect_waybar",
+//!    "return-type": "json",
+//!    "on-click": ""
+//!}
+//! ```
+//!
+//! Config directory should be located under :
+//!
+//! `$XDG_CONFIG_HOME/kdeconnect_waybar` or `$HOME/.config/kdeconnect_waybar` e.g. `/home/alice/.config/kdeconnect_waybar`
+//!
+//! In it make a file called `config.json` with your custom config
+//!
+//! Here's an example of what it could look like
+//! ```json
+//! {
+//! 	"$schema": "./config.schema.json",
+//! 	"configs": [
+//! 		{
+//! 			"update_interval_secs": 5,
+//! 			"format": "{Battery::ChargePercent}% {Battery::ChargeTexts} {Notification::Grouped}",
+//! 			"tooltip_format": "Device type: {DeviceInfo::DeviceTypeText}\nBattery status: {Battery::IsChargingText} {Battery::ChargePercent}% \nNotifications:\n{Notification::Single}",
+//! 			"device_not_found_text": "",
+//! 			"device_not_found_tooltip_text": "Device not found make sure kdeconnect is running and phone is connected",
+//! 			"device_phone_text": "Phone ",
+//! 			"device_tablet_text": "Tablet ",
+//!         }
+//!     ]
+//! }
+//! ```
+//! The two final text that will be displayed on your waybar are [`Config::format`] and [`Config::tooltip_format`] see [`GlobalFormat`] to understand how to configure them
+//!
+//! See also [`Config`] to know all that's available for your config
+//!
+
 #![feature(once_cell_try)]
 
-use crate::{
-    config::{Config, ConfigFile},
-    formatter::DeviceCategoryDataCache,
-};
 use clap::{Command, Parser, arg, command, value_parser};
 use color_eyre::eyre::{Result, eyre};
 use kdeconnect_wrapper::{
@@ -15,25 +61,27 @@ use notify::{Event, EventKind, Watcher};
 use serde::Serialize;
 use std::{
     borrow::Cow,
-    fs,
     io::{Write, stdout},
     sync::{Arc, mpsc},
 };
 
 pub mod config;
 pub mod formatter;
+use crate::config::*;
+use crate::formatter::*;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
-struct Args {
+pub struct Args {
     /// Name of the config to use
     #[arg(short, long)]
-    config_name: String,
+    pub config_name: String,
     /// Generate the config.schema.json file
     #[arg(short, long, default_value_t = false)]
-    gen_schema: bool,
+    pub gen_schema: bool,
 }
 
+#[doc(hidden)]
 fn main() -> Result<()> {
     color_eyre::install()?;
     let matches = command!()
@@ -146,6 +194,7 @@ fn main() -> Result<()> {
     }
 }
 
+#[doc(hidden)]
 #[derive(Default, Serialize)]
 struct OutputFormat<'a> {
     text: Cow<'a, str>,

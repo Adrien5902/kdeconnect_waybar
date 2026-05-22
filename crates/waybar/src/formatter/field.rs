@@ -10,6 +10,8 @@ use strum::EnumString;
 
 #[derive(Debug, Clone, Copy)]
 /// The different categories that can be matched in any [`GlobalFormat`]
+///
+/// Refer to each category to see all its available fields
 pub enum FieldCategory {
     DeviceInfo(DeviceInfo),
     Battery(Battery),
@@ -26,7 +28,13 @@ pub enum DeviceInfo {
 #[derive(Debug, Clone, Copy, EnumString)]
 /// Use to display information about the device's notifications
 pub enum Notification {
+    /// Device's current notifications grouped by application name
+    ///
+    /// Will be replaced with [`Config::notification_grouped_format`]
     Grouped,
+    /// Device's current individual notifications
+    ///
+    /// Will be replaced with [`Config::notification_single_format`]
     Single,
 }
 
@@ -34,12 +42,14 @@ pub enum Notification {
 /// Use to display information about the device's battery
 pub enum Battery {
     /// Will be replaced with how much battery the device has left
-    /// (this is measured in percentage, however the percent sign '%' isn't included you may wanna add it after in your [`GlobalFormat`])
+    ///
+    /// (this is measured in percentage, however the percent sign `%` isn't included you may wanna add it after in your [`GlobalFormat`])
     ChargePercent,
-    /// Will be replaced to [`Config::is_charging_text`] or [`Config::isnt_charging_text`] from [`Config`] depending on wherever the device is charging or not
+    /// Will be replaced to [`Config::is_charging_text`] or [`Config::isnt_charging_text`] depending on wherever the device is charging or not
     IsChargingText,
-    /// Will be replaced to [`Config::is_charging_texts`] or [`Config::isnt_charging_texts`] from [`Config`]
-    /// depends on wherever the device is charging or not and the current charge see [`Config::charge_ranges`] in [`Config`] for more information
+    /// Will be replaced to [`Config::is_charging_texts`] or [`Config::isnt_charging_texts`]
+    ///
+    /// depends on wherever the device is charging or not and the current charge see [`Config::charge_ranges`] for more information
     ChargeTexts,
 }
 
@@ -69,12 +79,15 @@ impl FromStr for FieldCategory {
     }
 }
 
+#[doc(hidden)]
 pub fn failed_to_parse_field_kind(s: &str) -> Report {
     // TODO : Add error message
     eyre!("{}", s)
 }
 
+#[doc(hidden)]
 #[derive(Debug)]
+/// Used not to fetch the device data twice
 pub struct DeviceCategoryDataCache<'a> {
     device: &'a Device<'a>,
     device_info: OnceLock<DeviceInfoData>,
