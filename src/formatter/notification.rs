@@ -1,6 +1,6 @@
+use crate::wrapper::notifications::NotificationData;
 use crate::{config::Config, formatter::*};
 use color_eyre::eyre::{Result, eyre};
-use kdeconnect_wrapper::notifications::NotificationData;
 use std::collections::BTreeMap;
 use strum::EnumString;
 

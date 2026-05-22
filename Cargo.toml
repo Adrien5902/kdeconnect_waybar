@@ -1,18 +1,16 @@
-[workspace]
-resolver = "3"
-members = ["crates/waybar", "crates/wrapper"]
-
-default-members = ["crates/waybar"]
-
-
-[workspace.package]
+[package]
 name = "kdeconnect_waybar"
 version = "0.1.0"
 edition = "2024"
+license-file = "LICENSE"
+keywords = ["kdeconnect", "waybar", "waybar-module"]
+homepage = "https://github.com/Adrien5902/kdeconnect_waybar"
+repository = "https://github.com/Adrien5902/kdeconnect_waybar.git"
+readme = "README.md"
+authors = ["Adrien5902"]
+description = "A highly customizable KDE Connect module for Waybar"
 
-[workspace.dependencies]
-kdeconnect_wrapper = { path = "crates/wrapper" }
-
+[dependencies]
 color-eyre = "0.6.5"
 dbus = "0.9.11"
 serde = { version = "1.0.228", features = ["derive"] }

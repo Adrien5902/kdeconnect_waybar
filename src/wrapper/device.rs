@@ -1,5 +1,5 @@
 use super::client::Client;
-use crate::{
+use crate::wrapper::{
     Result,
     client::ClientObject,
     notifications::{Notification, NotificationId},

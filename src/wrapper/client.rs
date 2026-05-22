@@ -1,4 +1,4 @@
-use crate::{
+use crate::wrapper::{
     Result,
     device::{Device, DeviceId},
     notifications::Notification,

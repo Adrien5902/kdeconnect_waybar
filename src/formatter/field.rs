@@ -1,10 +1,10 @@
 use super::PATH_SEPARATOR;
-use crate::{config::Config, formatter::*};
-use color_eyre::eyre::{Context, Report, Result, eyre};
-use kdeconnect_wrapper::{
+use crate::wrapper::{
     device::{BatteryStatus, Device, DeviceInfoData, DeviceType},
     notifications::NotificationData,
 };
+use crate::{config::Config, formatter::*};
+use color_eyre::eyre::{Context, Report, Result, eyre};
 use std::{borrow::Cow, str::FromStr, sync::OnceLock};
 use strum::EnumString;
 

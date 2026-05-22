@@ -52,11 +52,6 @@
 
 use clap::{Command, Parser, arg, command, value_parser};
 use color_eyre::eyre::{Result, eyre};
-use kdeconnect_wrapper::{
-    client::Client,
-    device::Device,
-    error::{DBusErrorKind, Error},
-};
 use notify::{Event, EventKind, Watcher};
 use serde::Serialize;
 use std::{
@@ -67,8 +62,11 @@ use std::{
 
 pub mod config;
 pub mod formatter;
-use crate::config::*;
-use crate::formatter::*;
+#[doc(hidden)]
+pub mod wrapper;
+use config::*;
+use formatter::*;
+use wrapper::*;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
