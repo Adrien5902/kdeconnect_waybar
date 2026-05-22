@@ -4,6 +4,8 @@
         "dbus",
         "isnt",
         "kdeconnect",
-        "stdintf"
+        "stdintf",
+        "waybar",
+        "Waybar"
     ]
 }

@@ -19,6 +19,12 @@ pub struct Format<T: FieldFormat> {
     chunks: Vec<Chunk<T>>,
 }
 
+impl<T: FieldFormat> Default for Format<T> {
+    fn default() -> Self {
+        Self { chunks: Vec::new() }
+    }
+}
+
 #[derive(Debug)]
 pub enum Chunk<T: FieldFormat> {
     Field(T),

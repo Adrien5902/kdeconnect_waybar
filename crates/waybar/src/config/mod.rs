@@ -2,7 +2,13 @@ use crate::formatter::*;
 use color_eyre::eyre::{Context, Result, eyre};
 use schemars::{JsonSchema, Schema, schema_for};
 use serde::{Deserialize, Deserializer};
-use std::{collections::HashMap, fmt::Display, fs, path::PathBuf, time::Duration};
+use std::{
+    collections::HashMap,
+    fmt::Display,
+    fs,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 mod defaults;
 use defaults::*;
@@ -86,9 +92,11 @@ pub struct Config {
     /// Can contain Nerd-Font icons
     pub device_tablet_text: String,
 
+    #[serde(default)]
     #[schemars(with = "Option<String>")]
     /// Groups notifications per app, and for each app replaces {[`Notification::Grouped`]} with the given [`NotificationFormat`]
     pub notification_grouped_format: NotificationFormat,
+    #[serde(default)]
     #[schemars(with = "Option<String>")]
     /// For each notification replaces {[`Notification::Single`]} with the given [`NotificationFormat`]
     pub notification_single_format: NotificationFormat,
@@ -137,8 +145,18 @@ impl ConfigFile {
         Ok(Self::dir()?.join(Self::FILE_NAME))
     }
 
+    fn check_or_make_existence(path: &Path) -> Result<bool> {
+        let exists = fs::exists(path)?;
+        if !exists {
+            fs::create_dir_all(path.parent().unwrap())?;
+            fs::write(path, String::new())?;
+        }
+        Ok(exists)
+    }
+
     pub fn read_all() -> Result<Self> {
         let path = Self::config_file_path()?;
+        Self::check_or_make_existence(&path)?;
         let config_str = fs::read_to_string(&path)
             .with_context(move || path.into_os_string().into_string().unwrap())?;
         let config = serde_json::from_str(&config_str).with_context(|| config_str)?;
@@ -146,7 +164,12 @@ impl ConfigFile {
         Ok(config)
     }
 
-    pub fn schema() -> Schema {
-        schema_for!(Self)
+    pub fn gen_schema() -> Result<()> {
+        let schema = schema_for!(Self);
+        let path = ConfigFile::dir()?.join("config.schema.json");
+        Self::check_or_make_existence(&path)?;
+        fs::write(&path, serde_json::to_string_pretty(&schema)?)?;
+        println!("generated json schema at {}", path.to_str().unwrap());
+        Ok(())
     }
 }
