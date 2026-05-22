@@ -30,7 +30,7 @@ jobs:
             libdbus-1-dev
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@nightly
 
       - name: Build docs
         run: cargo doc --no-deps
