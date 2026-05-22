@@ -3,28 +3,42 @@
 //! allows you to display many information about your mobile devices (phone or tablet)
 //! such as battery, notifications, ...
 //!
-//! this documentation assumes you have installed [Waybar](https://github.com/Alexays/Waybar/) and know how to configure it
+//! # Configuring
+//! This documentation assumes you have installed [Waybar](https://github.com/Alexays/Waybar/) and know how to configure it
 //! as well as [KDE Connect](https://kdeconnect.kde.org/) and already paired a device using it
 //!
+//! It is also recommended to have a Nerd-Font installed on your Waybar
+//!
+//! ## 🔧 Installation
 //! Check out [Installation](https://github.com/Adrien5902/kdeconnect_waybar#-installation) for detailed installation instructions
 //!
+//! ## ⚙️ Updating your waybar config
 //! Once installed start by adding the module to your waybar's config :
 //! ```jsonc
 //!~/.config/waybar/config.jsonc
 //!
 //!"custom/kdeconnect": {
 //!    "format": "{}",
-//!    "exec": "kdeconnect_waybar",
+//!    "exec": "kdeconnect_waybar", <-- or "kdeconnect_waybar -c <name>" to use a custom config name
 //!    "return-type": "json",
 //!    "on-click": ""
 //!}
 //! ```
 //!
-//! Config directory should be located under :
+//! ## ⚠️ Important
+//! Before continuing to the next steps I'd recommend you execute the command
+//! ```kdeconnect_waybar gen_schema```
+//! for it to generate a json schema file which will tell your IDE what should be in the config file
+//!
+//!
+//! ## 🎨 Configuring the module to your taste
+//! Then locate the config directory it should be under :
 //!
 //! `$XDG_CONFIG_HOME/kdeconnect_waybar` or `$HOME/.config/kdeconnect_waybar` e.g. `/home/alice/.config/kdeconnect_waybar`
 //!
-//! In it make a file called `config.json` with your custom config
+//! > If it doesn't appear create it manually or run `kdeconnect_waybar`
+//!
+//! In it make a file called `config.json` with your custom config (hot reloading supported)
 //!
 //! Here's an example of what it could look like
 //! ```json
@@ -45,6 +59,7 @@
 //! ```
 //! The two final text that will be displayed on your waybar are [`Config::format`] and [`Config::tooltip_format`] see [`GlobalFormat`] to understand how to configure them
 //!
+//! ## 👀 Look at whole documentation
 //! See also [`Config`] to know all that's available for your config
 //!
 

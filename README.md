@@ -7,15 +7,18 @@
 
 <p align="center">
 <img alt="Crates.io Version" src="https://img.shields.io/crates/v/kdeconnect_waybar?style=flat-square">
-<img alt="docs.rs" src="https://img.shields.io/docsrs/kdeconnect_waybar?style=flat-square">
+<img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/Adrien5902/kdeconnect_waybar/docs.yaml?style=flat-square&label=docs">
 </p>
 
-> [!WARNING]
-> Work in progress
-
-# 🔧 Installation
-## Using `cargo` :
+## 🔧 Installation
+### Using `cargo` :
 simply run the command :
 ```sh
 cargo install kdeconnect_waybar
 ```
+
+## ⚙️ Configuration
+See [docs 📄](https://adrien5902.github.io/kdeconnect_waybar/kdeconnect_waybar/)
+
+## 🧭 Example :
+![Preview](./examples/preview.png)
