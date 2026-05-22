@@ -19,5 +19,3 @@ simply run the command :
 ```sh
 cargo install kdeconnect_waybar
 ```
-
-> 

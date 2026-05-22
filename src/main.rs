@@ -62,10 +62,10 @@ use std::{
 
 pub mod config;
 pub mod formatter;
-#[doc(hidden)]
 pub mod wrapper;
 use config::*;
 use formatter::*;
+#[cfg(feature = "dbus")]
 use wrapper::*;
 
 #[derive(Parser, Debug)]
