@@ -21,6 +21,10 @@ pub enum FieldCategory {
 #[derive(Debug, Clone, Copy, EnumString)]
 /// Used to display the different informations related to the device
 pub enum DeviceInfo {
+    /// The local ip address of the device
+    Address,
+    /// The device name, configurable in the device's KDE Connect app
+    DeviceName,
     /// Will be replaced by [`Config::device_phone_text`] or [`Config::device_tablet_text`] depending on if the device is a phone or a tablet
     DeviceTypeText,
 }
@@ -139,7 +143,7 @@ impl FieldCategory {
     pub fn get_from_device<'a>(
         &self,
         config: &'a Config,
-        cache: &DeviceCategoryDataCache,
+        cache: &'a DeviceCategoryDataCache,
     ) -> Result<Cow<'a, str>> {
         let s: Cow<'a, str> = match *self {
             FieldCategory::Battery(f) => {
@@ -179,15 +183,22 @@ impl FieldCategory {
                     }
                 }
             }
-            FieldCategory::DeviceInfo(f) => match f {
-                DeviceInfo::DeviceTypeText => {
-                    let status = cache.get_device_info()?;
-                    match status.type_ {
+            FieldCategory::DeviceInfo(f) => {
+                let info = cache.get_device_info()?;
+                match f {
+                    DeviceInfo::Address => Cow::Borrowed(
+                        &info
+                            .reachable_addresses
+                            .get(0)
+                            .ok_or(eyre!("Ip address not found for device"))?,
+                    ),
+                    DeviceInfo::DeviceName => Cow::Borrowed(&info.name),
+                    DeviceInfo::DeviceTypeText => match info.type_ {
                         DeviceType::Phone => Cow::Borrowed(&config.device_phone_text),
                         DeviceType::Tablet => Cow::Borrowed(&config.device_tablet_text),
-                    }
+                    },
                 }
-            },
+            }
             FieldCategory::Notification(f) => {
                 let notifications = cache.get_notifications()?;
                 let s = f.to_string(notifications, config)?;

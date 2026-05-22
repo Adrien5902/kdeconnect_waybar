@@ -94,7 +94,7 @@ impl Chunk<FieldCategory> {
     pub fn to_str<'a>(
         &'a self,
         config: &'a Config,
-        cache: &DeviceCategoryDataCache,
+        cache: &'a DeviceCategoryDataCache,
     ) -> Result<Cow<'a, str>> {
         match self {
             Chunk::Str(s) => Ok(Cow::Borrowed(s)),
