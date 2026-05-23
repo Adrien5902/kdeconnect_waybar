@@ -7,93 +7,67 @@ use strum::EnumString;
 pub type NotificationFormat = Format<NotificationFormatField>;
 
 impl Notification {
-    pub fn to_string(&self, notifications: &[NotificationData], config: &Config) -> Result<String> {
-        Ok(match self {
+    pub fn to_string<'a>(
+        &self,
+        notifications: &'a [NotificationData],
+        config: &'a Config,
+    ) -> Result<String> {
+        let mut res: String = String::new();
+        match *self {
             Notification::Grouped => {
                 let format = &config.notification_grouped_format;
+
                 // We use BTree map instead of HashMap because we don't want notification order to change
                 // So notifications are organized in app_name alphabetical order
-                let mut map: BTreeMap<&str, Vec<&NotificationData>> = BTreeMap::new();
+                let mut map: BTreeMap<&'a str, Vec<&'a NotificationData>> = BTreeMap::new();
                 for notification in notifications {
                     map.entry(&notification.app_name)
                         .or_default()
                         .push(notification);
                 }
 
-                map.iter()
-                    .map(|(app_name, ns)| {
-                        format
-                            .chunks
-                            .iter()
-                            .map(|chunk| {
-                                Ok(match chunk {
-                                    Chunk::Field(f) => match *f {
-                                        NotificationFormatField::AppName => (*app_name).to_owned(),
-                                        NotificationFormatField::CustomIcon => {
-                                            Self::get_custom_icon(app_name, config)
-                                        }
-                                        NotificationFormatField::Count => ns.len().to_string(),
-                                        NotificationFormatField::CountText => config
-                                            .notifications_count_text
-                                            .get(&(ns.len() as i64))
-                                            .or(config.notifications_count_text.get(&0))
-                                            .map(|s| s.clone())
-                                            .unwrap_or(ns.len().to_string()),
-                                        NotificationFormatField::Content => {
-                                            Err(eyre!("Not available in grouped notification"))?
-                                        }
-                                        NotificationFormatField::Title => {
-                                            Err(eyre!("Not available in grouped notification"))?
-                                        }
-                                    },
-                                    Chunk::Str(s) => s.clone(),
-                                })
-                            })
-                            .collect::<Result<String>>()
-                    })
-                    .collect::<Result<String>>()?
+                for (app_name, notifications) in &map {
+                    for chunk in &format.chunks {
+                        match chunk {
+                            Chunk::Str(s) => res.push_str(s),
+                            Chunk::Field(field) => {
+                                let cow: Cow<'a, str> =
+                                    field.grouped_to_str(app_name, &notifications, config)?;
+
+                                res.push_str(&cow);
+                            }
+                        }
+                    }
+                }
             }
+
             Notification::Single => {
                 let format = &config.notification_single_format;
-                notifications
-                    .iter()
-                    .map(|n| {
-                        format
-                            .chunks
-                            .iter()
-                            .map(|chunk| {
-                                Ok(match chunk {
-                                    Chunk::Field(f) => match *f {
-                                        NotificationFormatField::AppName => n.app_name.clone(),
-                                        NotificationFormatField::CustomIcon => {
-                                            Self::get_custom_icon(&n.app_name, config)
-                                        }
-                                        NotificationFormatField::Count => {
-                                            Err(eyre!("Not available in single notification"))?
-                                        }
-                                        NotificationFormatField::CountText => {
-                                            Err(eyre!("Not available in single notification"))?
-                                        }
-                                        NotificationFormatField::Content => n.text.clone(),
-                                        NotificationFormatField::Title => n.title.clone(),
-                                    },
-                                    Chunk::Str(s) => s.clone(),
-                                })
-                            })
-                            .collect::<Result<String>>()
-                    })
-                    .collect::<Result<String>>()?
+                for notification in notifications {
+                    for chunk in &format.chunks {
+                        match chunk {
+                            Chunk::Str(s) => res.push_str(&s),
+                            Chunk::Field(field) => {
+                                res.push_str(&field.single_to_str(notification, config)?)
+                            }
+                        }
+                    }
+                }
             }
-        })
+        }
+
+        Ok(res)
     }
 
-    fn get_custom_icon(app_name: &str, config: &Config) -> String {
+    const DEFAULT_ICON: &'static str = "?";
+
+    fn get_custom_icon<'a>(app_name: &str, config: &'a Config) -> &'a str {
         config
             .app_icons
-            .get(&app_name.to_string())
+            .get(app_name)
             .or(config.app_icons.get(&String::new()))
-            .map(|s| s.clone())
-            .unwrap_or("?".to_string())
+            .map(|a| a.as_str())
+            .unwrap_or(Self::DEFAULT_ICON)
     }
 }
 
@@ -126,5 +100,53 @@ pub enum NotificationFormatField {
 impl FieldFormat for NotificationFormatField {
     fn parse(s: &str) -> Result<Self> {
         Ok(s.parse()?)
+    }
+}
+
+impl NotificationFormatField {
+    pub fn grouped_to_str<'a>(
+        &self,
+        app_name: &'a str,
+        notifications: &[&'a NotificationData],
+        config: &'a Config,
+    ) -> Result<Cow<'a, str>> {
+        let s = match *self {
+            NotificationFormatField::AppName => Cow::Borrowed(app_name),
+            NotificationFormatField::CustomIcon => {
+                Cow::Borrowed(Notification::get_custom_icon(app_name, config))
+            }
+            NotificationFormatField::Count => Cow::Owned(notifications.len().to_string()),
+            NotificationFormatField::CountText => config
+                .notifications_count_text
+                .get(&(notifications.len() as i64))
+                .or(config.notifications_count_text.get(&0))
+                .map(|s| Cow::<'_, str>::Borrowed(s))
+                .unwrap_or(Cow::Owned(notifications.len().to_string())),
+            NotificationFormatField::Content => {
+                Err(eyre!("Not available in grouped notification"))?
+            }
+            NotificationFormatField::Title => Err(eyre!("Not available in grouped notification"))?,
+        };
+        Ok(s)
+    }
+
+    pub fn single_to_str<'a>(
+        &self,
+        notification: &'a NotificationData,
+        config: &'a Config,
+    ) -> Result<Cow<'a, str>> {
+        let s = match *self {
+            NotificationFormatField::AppName => &notification.app_name,
+            NotificationFormatField::CustomIcon => {
+                Notification::get_custom_icon(&notification.app_name, config)
+            }
+            NotificationFormatField::Count => Err(eyre!("Not available in single notification"))?,
+            NotificationFormatField::CountText => {
+                Err(eyre!("Not available in single notification"))?
+            }
+            NotificationFormatField::Content => &notification.text,
+            NotificationFormatField::Title => &notification.title,
+        };
+        Ok(Cow::Borrowed(s))
     }
 }

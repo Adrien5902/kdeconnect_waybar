@@ -168,9 +168,9 @@ impl FieldCategory {
                         }
 
                         let texts = if status.is_charging {
-                            config.is_charging_texts.clone()
+                            &config.is_charging_texts
                         } else {
-                            config.isnt_charging_texts.clone()
+                            &config.isnt_charging_texts
                         };
 
                         let text = texts
@@ -179,7 +179,7 @@ impl FieldCategory {
                             .with_context(|| config.to_string())
                             .with_context(|| format!("{:?}", texts))?;
 
-                        Cow::Owned(text.clone())
+                        Cow::Borrowed(text)
                     }
                 }
             }
@@ -201,9 +201,7 @@ impl FieldCategory {
             }
             FieldCategory::Notification(f) => {
                 let notifications = cache.get_notifications()?;
-                let s = f.to_string(notifications, config)?;
-
-                Cow::Owned(s)
+                Cow::Owned(f.to_string(notifications, config)?)
             }
         };
 

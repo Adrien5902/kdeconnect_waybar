@@ -83,10 +83,13 @@ impl<T: FieldFormat> Format<T> {
 
 impl Format<FieldCategory> {
     pub fn to_string(&self, config: &Config, cache: &DeviceCategoryDataCache) -> Result<String> {
-        self.chunks
-            .iter()
-            .map(|chunk| chunk.to_str(config, &cache).map(|cow| cow.to_owned()))
-            .collect::<Result<String>>()
+        let mut out = String::new();
+
+        for chunk in &self.chunks {
+            out.push_str(&chunk.to_str(config, cache)?);
+        }
+
+        Ok(out)
     }
 }
 

@@ -26,11 +26,8 @@ impl<'a> Device<'a> {
         Client::INTERFACE_ROOT.to_string() + ".device"
     }
 
-    pub(crate) fn new(client: &'a Client, id: &DeviceId) -> Self {
-        Self {
-            id: id.clone(),
-            client,
-        }
+    pub(crate) fn new(client: &'a Client, id: DeviceId) -> Self {
+        Self { id, client }
     }
 
     pub fn get_battery_status(&self) -> Result<BatteryStatus> {

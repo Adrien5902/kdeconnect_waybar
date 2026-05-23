@@ -72,7 +72,8 @@ use serde::Serialize;
 use std::{
     borrow::Cow,
     io::{Write, stdout},
-    sync::{Arc, mpsc},
+    rc::Rc,
+    sync::mpsc,
 };
 
 pub mod config;
@@ -126,7 +127,7 @@ fn main() -> Result<()> {
     let selected_config = matches.get_one::<String>("config");
     let path = ConfigFile::config_file_path()?;
 
-    let mut configs: Vec<Arc<Config>> = Vec::new();
+    let mut configs: Vec<Rc<Config>> = Vec::new();
 
     let mut refresh_configs = || {
         println!("{:?}", "Reloading config");
@@ -134,7 +135,7 @@ fn main() -> Result<()> {
         configs = ConfigFile::read_all()?
             .configs
             .into_iter()
-            .map(|c| Arc::new(c))
+            .map(|c| Rc::new(c))
             .collect();
 
         let config = match selected_config {

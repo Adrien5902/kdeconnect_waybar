@@ -41,7 +41,7 @@ impl Client {
     pub fn devices<'a>(&'a self) -> Result<Vec<Device<'a>>> {
         Ok(self
             .devices_ids()?
-            .iter()
+            .into_iter()
             .map(|id| Device::new(self, id))
             .collect())
     }
