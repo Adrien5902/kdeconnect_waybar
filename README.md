@@ -1,4 +1,4 @@
-<h1 align="center"> KDE Connect Waybar</h1>
+<h1 align="center">KDE Connect Waybar</h1>
 <p align="center">
     <b>
         A highly configurable <a href="https://kdeconnect.kde.org/">KDE Connect</a> module for <a href="https://github.com/Alexays/Waybar/">Waybar</a>
@@ -20,5 +20,10 @@ cargo install kdeconnect_waybar
 ## ⚙️ Configuration
 See [docs 📄](https://adrien5902.github.io/kdeconnect_waybar/kdeconnect_waybar/)
 
-## 🧭 Example :
-![Preview](./preview.png)
+## 🧭 Examples
+>![Preview](./assets/preview.png)
+
+> My personal config : 
+>
+> ![Preview](./assets/cyberpunk.png)
+
