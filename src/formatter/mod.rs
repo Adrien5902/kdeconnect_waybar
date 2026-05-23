@@ -22,9 +22,7 @@ pub trait FieldFormat: Sized {
 }
 
 #[derive(Debug)]
-/// Any kind of format
-///
-/// Can contain Nerd-Font icons
+/// ℹ️ Can contain Nerd-Font icons
 ///
 /// Formats are strings of text that can contain special fields surrounded by braces (`{` and `}`),
 /// fields may are organized in categories and are then access with this syntax `{Category::Field}`

@@ -9,7 +9,7 @@ docs:
 
 alias sd := serve-docs
 serve-docs:
-    cargo server --path .
+    cargo server --path ./target/doc
 
 watch:
     watchexec "just docs & just test"

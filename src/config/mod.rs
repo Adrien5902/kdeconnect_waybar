@@ -21,6 +21,11 @@ pub struct ConfigFile {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+/// The config specification
+///
+/// ℹ️ Each text strings and formats can contain Nerd-Font icons
+///
+/// ⬇️ Below are all the config options
 pub struct Config {
     /// Name of this config, use `kdeconnect_waybar --config <name>` in the `exec` field of the module config to start this config
     ///
@@ -37,9 +42,11 @@ pub struct Config {
     #[serde(deserialize_with = "deserialize_duration_secs")]
     #[serde(default = "default_update_interval")]
     #[schemars(with = "f64")]
-    /// The interval at which the waybar module text refreshes in seconds
+    /// The interval at which the waybar module text refreshes in seconds, supports floats e.g. 3.14
     ///
-    /// Default is 5
+    /// Default is 5s
+    ///
+    /// You may wanna bring this down, though you shouldn't go under 1 second it causes issues with waybar tooltips
     pub update_interval_secs: Duration,
 
     #[schemars(with = "String")]
@@ -47,6 +54,8 @@ pub struct Config {
     pub format: GlobalFormat,
     #[schemars(with = "Option<String>")]
     /// The default [`GlobalFormat`] used for the module tooltip text
+    ///
+    /// Tooltip is the text showed when your mouse hovers the module
     pub tooltip_format: Option<GlobalFormat>,
 
     #[serde(default = "default_device_not_found_text")]
@@ -59,34 +68,30 @@ pub struct Config {
     #[serde(default = "default_is_charging_text")]
     /// The text replacing {[Battery::IsChargingText]} (in any [`GlobalFormat`]) when device is charging
     ///
-    /// Can contain Nerd-Font icons
-    ///
     /// e.g. `"󰂄 Charging... "`
     pub is_charging_text: String,
     #[serde(default = "default_isnt_charging_text")]
     /// The text replacing {[Battery::IsChargingText]} (in any [`GlobalFormat`]) when device isn't charging
     ///
-    /// Can contain Nerd-Font icons
-    ///
     /// e.g.`"󱟩 Not charging"`
     pub isnt_charging_text: String,
 
     #[serde(default = "default_charge_ranges")]
-    /// An array of battery charge ranges values
+    /// An array of battery charge ranges values (measured in percentage)
     ///
-    /// e.g. [25, 50, 75] => contains 4 ranges 0-25, 25-50, 50-75, 75-100
+    /// e.g. `[25, 50, 75]` => contains 4 ranges: `0-24`, `25-49`, `50-74`, `75-100`
+    ///
+    /// e.g. `[10, 20, 30, 40, 50, 60, 70, 80, 90]` => has 10 : `0-9`, `10-19`, ..., `90-100`
     ///
     /// Used alongside [`Config::is_charging_texts`] and [`Config::isnt_charging_texts`]
     pub charge_ranges: Vec<i64>,
     #[serde(default = "default_is_charging_texts")]
-    /// Can contain Nerd-Font icons
-    ///
     /// Used alongside [`Config::charge_ranges`], must contains len([`Config::charge_ranges`])+1 strings
     ///
     /// When device is charging will replace {[`Battery::ChargeTexts`]} in any format with the nth string,
     /// corresponding to the nth charge range the device battery charge is into
     ///
-    /// e.g. ["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"] or ["Critical", "Low", "Good", "Super-charged"]
+    /// e.g. `["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"]` or `["Critical", "Low", "Good", "Super-charged"]`
     pub is_charging_texts: Vec<String>,
     #[serde(default = "default_isnt_charging_texts")]
     /// Used alongside [`Config::charge_ranges`], must contains len([`Config::charge_ranges`])+1 strings
@@ -94,24 +99,18 @@ pub struct Config {
     /// When device isn't charging will replace {[`Battery::ChargeTexts`]} in any format with the nth string,
     /// corresponding to the nth charge range the device battery charge is into
     ///
-    /// e.g. ["󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"] or ["Critical", "Low", "Good", "Super-charged"]
-    ///
-    /// Can contain Nerd-Font icons
+    /// e.g. `["󰁺","󰁻","󰁼","󰁽","󰁾","󰁿","󰂀","󰂁","󰂂","󰁹"]` or `["Critical", "Low", "Good", "Super-charged"]`
     pub isnt_charging_texts: Vec<String>,
 
     #[serde(default = "default_device_phone_text")]
     /// Will replace {[`DeviceInfo::DeviceTypeText`]} in any [`GlobalFormat`] if device is a phone
     ///
     ///  e.g. `"Phone "`,
-    ///
-    /// Can contain Nerd-Font icons
     pub device_phone_text: String,
     #[serde(default = "default_device_tablet_text")]
     /// Will replace {[`DeviceInfo::DeviceTypeText`]} in any [`GlobalFormat`] if device is a tablet
     ///
     /// e.g. `"Tablet "`
-    ///
-    /// Can contain Nerd-Font icons
     pub device_tablet_text: String,
 
     #[serde(default)]
@@ -132,17 +131,15 @@ pub struct Config {
     /// e.g.:
     /// - `{1: "One", 2: "Two", 0: "Three or more"}`
     /// - or with Nerd-Font icons `{"1": "󰲠","2": "󰲢","3": "󰲤","4": "󰲦","5": "󰲨","6": "󰲪","7": "󰲬","8": "󰲮","9": "󰲰","0": "󰲲"}`
-    ///
-    /// Can contain Nerd-Font icons
     pub notifications_count_text: HashMap<i64, String>,
     #[serde(default)]
     /// When in a [`Grouped`](Notification::Grouped) [`NotificationFormat`] replaces {[`CustomIcon`](NotificationFormatField::CustomIcon)} with the given string matching the amount of notifications for this app
     ///
-    /// Recommended with Nerd-Font icons
+    /// ℹ️ Recommended with Nerd-Font icons
     ///
     /// A dictionary with app names as keys and text strings as values
     ///
-    /// WARNING: app names are case-sensitive: for example youtube should be YouTube
+    /// ⚠️ Warning app names are case-sensitive: for example `youtube` should be `YouTube`
     pub app_icons: HashMap<String, String>,
 }
 

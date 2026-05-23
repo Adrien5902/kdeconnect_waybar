@@ -4,6 +4,12 @@ use color_eyre::eyre::{Result, eyre};
 use std::collections::BTreeMap;
 use strum::EnumString;
 
+/// A kind of [`Format`]
+/// used in [`Config::notification_grouped_format`] and [`Config::notification_single_format`] e.g. `"-{AppName}\n"`
+///
+/// Can be either grouped ore single, see [`Notification`]
+///
+/// see [`NotificationFormatField`] for all the different fields available
 pub type NotificationFormat = Format<NotificationFormatField>;
 
 impl Notification {
@@ -72,27 +78,35 @@ impl Notification {
 }
 
 #[derive(Clone, Copy, Debug, EnumString)]
-/// TODO : document
+/// All the fields than can be used in a [`NotificationFormat`], see [`Config::notification_grouped_format`] and [`Config::notification_single_format`]
+///
+/// ⚠️ Caution: Some fields are only available in grouped or single mode
 pub enum NotificationFormatField {
-    /// The app name e.g. Instagram, Snapchat
+    /// The app name e.g. `Instagram`, `Snapchat`
     AppName,
-    /// A text field corresponding to the notification icon
-    /// recommended with Nerd-Font icons
+    /// A text field corresponding to the notification's app icon,
     /// see [`Config::app_icons`]
+    ///
+    /// ℹ️ Recommended with Nerd-Font icons,
     CustomIcon,
 
-    /// Available for {[`Notification::Single`]} only
+    /// ⚠️ Available for {[`Notification::Single`]} only
+    ///
     /// The title of the notification, corresponds the the bigger text
     Title,
-    /// Available for {[`Notification::Single`]} only
+    /// ⚠️ Available for {[`Notification::Single`]} only
+    ///
     /// The content of the notification, corresponds the the smaller text under the title
     Content,
 
-    /// Available for {[`Notification::Grouped`]} only
+    /// ⚠️ Available for {[`Notification::Grouped`]} only
+    ///
     /// The amount of notifications of this app, displayed as a number
     Count,
-    /// Available for {[`Notification::Grouped`]} only
-    /// The amount of notifications of this app, with custom display string like icons for example
+    /// ⚠️ Available for {[`Notification::Grouped`]} only
+    ///
+    /// The amount of notifications of this app, with custom display strings like icons for example,
+    ///
     /// see [`Config::notifications_count_text`] for more details
     CountText,
 }

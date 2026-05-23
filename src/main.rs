@@ -4,10 +4,10 @@
 //! such as battery, notifications, ...
 //!
 //! # Configuring
-//! This documentation assumes you have installed [Waybar](https://github.com/Alexays/Waybar/) and know how to configure it
+//! This documentation assumes you have installed [Waybar](https://github.com/Alexays/Waybar/) and know how to configure it,
 //! as well as [KDE Connect](https://kdeconnect.kde.org/) and already paired a device using it
 //!
-//! It is also recommended to have a Nerd-Font installed on your Waybar
+//! It is also recommended to have a [Nerd-Font](https://www.nerdfonts.com/#home) installed on your Waybar
 //!
 //! ## 🔧 Installation
 //! Check out [Installation](https://github.com/Adrien5902/kdeconnect_waybar#-installation) for detailed installation instructions
@@ -27,7 +27,9 @@
 //!
 //! ## ⚠️ Important
 //! Before continuing to the next steps I'd recommend you execute the command
-//! ```kdeconnect_waybar gen_schema```
+//! ```
+//! kdeconnect_waybar gen_schema
+//! ```
 //! for it to generate a json schema file which will tell your IDE what should be in the config file
 //!
 //!
@@ -40,7 +42,7 @@
 //!
 //! In it make a file called `config.json` with your custom config (hot reloading supported)
 //!
-//! Here's an example of what it could look like
+//! Here's an example of what it could look like :
 //! ```json
 //! {
 //! 	"$schema": "./config.schema.json",
@@ -57,11 +59,23 @@
 //!     ]
 //! }
 //! ```
+//!
+//! You may wanna look at [examples](https://github.com/Adrien5902/kdeconnect_waybar/tree/main/examples) for more inspiration !
+//!
 //! The two final text that will be displayed on your waybar are [`Config::format`] and [`Config::tooltip_format`] see [`GlobalFormat`] to understand how to configure them
+//!
+//! configs is an array so you can configure multiple ones and use them with `kdeconnect_waybar -c <name>` in your Waybar module `exec` field
 //!
 //! ## 👀 Look at whole documentation
 //! See also [`Config`] to know all that's available for your config
 //!
+//! ## 🐞 Bugs and Errors
+//! If something appears to be broken, before submitting an issue,
+//! try running the program outside out of the waybar (just run `kdeconnect_waybar` in your terminal),
+//! if anything goes wrong it will display an error,
+//! it is useful for debugging your config (if you misspelled some field for example),
+//!
+//! If you can pin point the issue or wanna request a new feature then feel free to open an issue [here](https://github.com/Adrien5902/kdeconnect_waybar/issues)
 
 #![feature(once_cell_try)]
 

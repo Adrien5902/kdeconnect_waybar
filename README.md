@@ -21,4 +21,4 @@ cargo install kdeconnect_waybar
 See [docs 📄](https://adrien5902.github.io/kdeconnect_waybar/kdeconnect_waybar/)
 
 ## 🧭 Example :
-![Preview](./examples/preview.png)
+![Preview](./preview.png)
