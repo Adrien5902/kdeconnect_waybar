@@ -18,7 +18,7 @@ cargo install kdeconnect_waybar
 ```
 
 ## ⚙️ Configuration
-See [docs 📄](https://adrien5902.github.io/kdeconnect_waybar/kdeconnect_waybar/)
+See [docs 📄](https://adrien5902.github.io/kdeconnect_waybar/kdeconnect_waybar/) for customization and styling
 
 ## 🧭 Examples
 >![Preview](./assets/preview.png)

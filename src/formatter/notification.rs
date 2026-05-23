@@ -7,7 +7,7 @@ use strum::EnumString;
 /// A kind of [`Format`]
 /// used in [`Config::notification_grouped_format`] and [`Config::notification_single_format`] e.g. `"-{AppName}\n"`
 ///
-/// Can be either grouped ore single, see [`Notification`]
+/// Can be either grouped or single, see [`Notification`]
 ///
 /// see [`NotificationFormatField`] for all the different fields available
 pub type NotificationFormat = Format<NotificationFormatField>;

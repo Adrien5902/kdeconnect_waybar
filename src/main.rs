@@ -33,7 +33,7 @@
 //! for it to generate a json schema file which will tell your IDE what should be in the config file
 //!
 //!
-//! ## 🎨 Configuring the module to your taste
+//! ## ✨ Configuring the module to your taste
 //! Then locate the config directory it should be under :
 //!
 //! `$XDG_CONFIG_HOME/kdeconnect_waybar` or `$HOME/.config/kdeconnect_waybar` e.g. `/home/alice/.config/kdeconnect_waybar`
@@ -68,6 +68,9 @@
 //!
 //! ## 👀 Look at whole documentation
 //! See also [`Config`] to know all that's available for your config
+//!
+//! ## 🎨 Styling
+//! You can edit the module's style by referring to it with `#custom-kdeconnect` in your waybar's css
 //!
 //! ## 🐞 Bugs and Errors
 //! If something appears to be broken, before submitting an issue,
