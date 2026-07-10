@@ -29,9 +29,9 @@ impl Client {
     }
 
     pub fn devices_ids(&self) -> Result<Vec<DeviceId>> {
-        let proxy =
-            self.conn
-                .with_proxy(Self::INTERFACE_ROOT, Self::PATH_ROOT, self.timeout.clone());
+        let proxy = self
+            .conn
+            .with_proxy(Self::INTERFACE_ROOT, Self::PATH_ROOT, self.timeout);
 
         let (devices,): (Vec<DeviceId>,) =
             proxy.method_call(Self::INTERFACE_ROOT.to_string() + ".daemon", "devices", ())?;
@@ -55,7 +55,7 @@ pub trait ClientObject<'c: 'p, 'p> {
         client.conn.with_proxy(
             Client::INTERFACE_ROOT,
             into_dbus_path(&path),
-            client.timeout.clone(),
+            client.timeout,
         )
     }
 
