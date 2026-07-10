@@ -12,13 +12,16 @@ impl<'a> Notification<'a> {
     }
 
     pub fn get_data(&self) -> Result<NotificationData> {
-        Ok(self.get_all(&self.path(), &self.device.notifications_interface())?)
+        let mut data: NotificationData =
+            self.get_all(&self.path(), &self.device.notifications_interface())?;
+        data.text = data.text.replace("<br/>", "\n");
+        Ok(data)
     }
 }
 
 dbus_struct! {
     #[derive(Debug)]
-    pub struct NotificationData{
+    pub struct NotificationData {
         has_icon: bool,
         internal_id: String,
         is_conversation: bool,
