@@ -82,12 +82,13 @@
 
 #![feature(once_cell_try)]
 
-use clap::{Command, Parser, arg, command, value_parser};
+use clap::{ArgAction, Command, Parser, arg, command, value_parser};
 use color_eyre::eyre::{Result, eyre};
 use notify::{Event, EventKind, Watcher};
 use serde::Serialize;
 use std::{
     borrow::Cow,
+    cell::OnceCell,
     io::{Write, stdout},
     rc::Rc,
     sync::mpsc,
@@ -112,6 +113,20 @@ pub struct Args {
     pub gen_schema: bool,
 }
 
+thread_local! {
+    static IS_VERBOSE: OnceCell<bool> = OnceCell::new();
+}
+
+macro_rules! debug {
+    ($($arg:tt)*) => {
+        IS_VERBOSE.with(|cell| {
+            if cell.get().copied().unwrap_or_default() {
+                println!("[INFO] {}", format_args!($($arg)*))
+            }
+        })
+    }
+}
+
 #[doc(hidden)]
 fn main() -> Result<()> {
     color_eyre::install()?;
@@ -122,6 +137,11 @@ fn main() -> Result<()> {
             )
             .required(false)
             .value_parser(value_parser!(String)),
+        )
+        .arg(
+            arg!(-v --verbose "Prints debug messages to stdout")
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .subcommand(
             Command::new("gen_schema")
@@ -141,14 +161,24 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    IS_VERBOSE
+        .with(|cell| {
+            cell.set(
+                matches
+                    .get_one::<bool>("verbose")
+                    .copied()
+                    .unwrap_or_default(),
+            )
+        })
+        .expect("State already set");
+
     let selected_config = matches.get_one::<String>("config");
     let path = ConfigFile::config_file_path()?;
 
     let mut configs: Vec<Rc<Config>> = Vec::new();
 
     let mut refresh_configs = || {
-        println!("{:?}", "Reloading config");
-
+        debug!("Reloading config");
         configs = ConfigFile::read_all()?
             .configs
             .into_iter()
