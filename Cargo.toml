@@ -1,6 +1,6 @@
 [package]
 name = "kdeconnect_waybar"
-version = "1.0.1"
+version = "1.1.0"
 edition = "2024"
 license-file = "LICENSE"
 keywords = ["kdeconnect", "waybar", "waybar-module"]
