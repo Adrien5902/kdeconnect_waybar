@@ -143,6 +143,11 @@ fn main() -> Result<()> {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            arg!(-nu --no_updates "Print data only once to the stdout, powerful with jq")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
         .subcommand(
             Command::new("gen_schema")
                 .about("Generates json schema file associated with config.json"),
@@ -171,6 +176,11 @@ fn main() -> Result<()> {
             )
         })
         .expect("State already set");
+
+    let no_updates = matches
+        .get_one::<bool>("no_updates")
+        .copied()
+        .unwrap_or_default();
 
     let selected_config = matches.get_one::<String>("config");
     let path = ConfigFile::config_file_path()?;
@@ -212,7 +222,7 @@ fn main() -> Result<()> {
     let mut watcher = notify::recommended_watcher(tx)?;
     watcher.watch(&path, notify::RecursiveMode::NonRecursive)?;
 
-    loop {
+    'main: loop {
         // TODO: Catch errors and restart rather than panic
         let devices = match client.devices() {
             Ok(v) => Some(v),
@@ -240,6 +250,10 @@ fn main() -> Result<()> {
         let output = OutputFormat::format_output(device, &config)?;
 
         writeln!(&mut stdout_lock, "{}", serde_json::to_string(&output)?)?;
+
+        if no_updates {
+            break 'main Ok(());
+        }
 
         match rx.recv_timeout(update_interval) {
             Ok(res) => match res?.kind {
