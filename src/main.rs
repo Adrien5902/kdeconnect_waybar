@@ -80,8 +80,6 @@
 //!
 //! If you can pin point the issue or wanna request a new feature then feel free to open an issue [here](https://github.com/Adrien5902/kdeconnect_waybar/issues)
 
-#![feature(once_cell_try)]
-
 use clap::{ArgAction, Command, Parser, arg, command, value_parser};
 use color_eyre::eyre::{Result, eyre};
 use notify::{Event, EventKind, Watcher};
@@ -144,7 +142,7 @@ fn main() -> Result<()> {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            arg!(-nu --no_updates "Print data only once to the stdout, powerful with jq")
+            arg!(-n --no_updates "Print data only once to the stdout, powerful with jq")
                 .required(false)
                 .action(ArgAction::SetTrue),
         )

@@ -99,6 +99,21 @@ pub struct DeviceCategoryDataCache<'a> {
     notification: OnceLock<Vec<NotificationData>>,
 }
 
+// Helper function to remove nightly feature dependency once_cell_try
+pub fn get_or_try_init<T, F, E>(cell: &OnceLock<T>, f: F) -> Result<&T, E>
+where
+    F: FnOnce() -> Result<T, E>,
+{
+    if let Some(value) = cell.get() {
+        return Ok(value);
+    }
+
+    // This should always be ok since if the code continued nothing was set 
+    let _ = cell.set(f()?);
+    // This shouldn't panic as we just set it's content
+    Ok(cell.get().unwrap())
+}
+
 impl<'a> DeviceCategoryDataCache<'a> {
     pub fn new(device: &'a Device<'a>) -> Self {
         Self {
@@ -110,19 +125,19 @@ impl<'a> DeviceCategoryDataCache<'a> {
     }
 
     pub fn get_device_info(&self) -> Result<&DeviceInfoData> {
-        Ok(self
-            .device_info
-            .get_or_try_init(|| self.device.get_device_info())?)
+        Ok(get_or_try_init(&self.device_info, || {
+            self.device.get_device_info()
+        })?)
     }
 
     pub fn get_battery(&self) -> Result<&BatteryStatus> {
-        Ok(self
-            .battery
-            .get_or_try_init(|| self.device.get_battery_status())?)
+        Ok(get_or_try_init(&self.battery, || {
+            self.device.get_battery_status()
+        })?)
     }
 
     pub fn get_notifications(&self) -> Result<&Vec<NotificationData>> {
-        Ok(self.notification.get_or_try_init(|| {
+        Ok(get_or_try_init(&self.notification, || {
             let mut notifications: Vec<NotificationData> = self
                 .device
                 .get_notifications()?
