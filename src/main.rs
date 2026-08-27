@@ -217,8 +217,9 @@ fn main() -> Result<()> {
     let mut stdout_lock = stdout().lock();
 
     let (tx, rx) = mpsc::channel::<Result<Event, notify::Error>>();
+
     let mut watcher = notify::recommended_watcher(tx)?;
-    watcher.watch(&path, notify::RecursiveMode::NonRecursive)?;
+    watcher.watch(&ConfigFile::dir()?, notify::RecursiveMode::NonRecursive)?;
 
     'main: loop {
         // TODO: Catch errors and restart rather than panic
@@ -254,11 +255,16 @@ fn main() -> Result<()> {
         }
 
         match rx.recv_timeout(update_interval) {
-            Ok(res) => match res?.kind {
-                EventKind::Modify(_) => (config, update_interval, client) = refresh_configs()?,
-                EventKind::Create(_) => (config, update_interval, client) = refresh_configs()?,
-                _ => (),
-            },
+            Ok(res) => {
+                let event = res?;
+                let config_changed = event.paths.iter().any(|event_path| event_path == &path);
+
+                if config_changed
+                    && matches!(event.kind, EventKind::Modify(_) | EventKind::Create(_))
+                {
+                    (config, update_interval, client) = refresh_configs()?;
+                }
+            }
             Err(e) => match e {
                 mpsc::RecvTimeoutError::Timeout => (),
                 _ => Err(e)?,
