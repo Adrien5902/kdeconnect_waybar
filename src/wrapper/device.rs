@@ -100,5 +100,7 @@ dbus_enum! {
     pub enum DeviceType {
         Phone,
         Tablet,
+        Desktop,
+        Laptop,
     }
 }

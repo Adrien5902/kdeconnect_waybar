@@ -63,3 +63,11 @@ pub fn default_device_phone_text() -> String {
 pub fn default_device_tablet_text() -> String {
     "Tablet ".into()
 }
+
+pub fn default_device_desktop_text() -> String {
+    "Desktop ".to_string()
+}
+
+pub fn default_device_laptop_text() -> String {
+    "Laptop ".to_string()
+}

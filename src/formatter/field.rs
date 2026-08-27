@@ -211,6 +211,8 @@ impl FieldCategory {
                     DeviceInfo::DeviceTypeText => match info.type_ {
                         DeviceType::Phone => Cow::Borrowed(&config.device_phone_text),
                         DeviceType::Tablet => Cow::Borrowed(&config.device_tablet_text),
+                        DeviceType::Desktop => Cow::Borrowed(&config.device_desktop_text),
+                        DeviceType::Laptop => Cow::Borrowed(&config.device_laptop_text),
                     },
                 }
             }

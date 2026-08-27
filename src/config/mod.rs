@@ -113,6 +113,12 @@ pub struct Config {
     /// e.g. `"Tablet "`
     pub device_tablet_text: String,
 
+    #[serde(default = "default_device_desktop_text")]
+    pub device_desktop_text: String,
+
+    #[serde(default = "default_device_laptop_text")]
+    pub device_laptop_text: String,
+
     #[serde(default)]
     #[schemars(with = "Option<String>")]
     /// Groups notifications per app, and for each app replaces {[`Notification::Grouped`]} with the given [`NotificationFormat`]
