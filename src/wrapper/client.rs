@@ -39,11 +39,11 @@ impl Client {
     }
 
     pub fn devices<'a>(&'a self) -> Result<Vec<Device<'a>>> {
-        Ok(self
+        self
             .devices_ids()?
             .into_iter()
             .map(|id| Device::new(self, id))
-            .collect::<Result<_>>()?)
+            .collect::<Result<_>>()
     }
 }
 
@@ -54,7 +54,7 @@ pub trait ClientObject<'c: 'p, 'p> {
         let client = self.client();
         client.conn.with_proxy(
             Client::INTERFACE_ROOT,
-            into_dbus_path(&path),
+            into_dbus_path(path),
             client.timeout,
         )
     }
@@ -63,7 +63,7 @@ pub trait ClientObject<'c: 'p, 'p> {
     where
         T: FromDBusMap,
     {
-        let proxy = self.make_proxy(&path);
+        let proxy = self.make_proxy(path);
         let props: PropMap = proxy.get_all(interface)?;
         let res = T::from_props(props)?;
         Ok(res)

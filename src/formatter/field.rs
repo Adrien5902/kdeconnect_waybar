@@ -61,17 +61,18 @@ impl FromStr for FieldCategory {
     type Err = Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let split: Vec<_> = s.split(PATH_SEPARATOR).collect();
+        let mut split = s.split(PATH_SEPARATOR);
 
-        // TODO : Add better error message
-        let category = *split
-            .get(0)
-            .ok_or(eyre!("expected a category, Syntax: Category:Field"))
+        let category = split
+            .next()
+            .ok_or_else(|| eyre!("expected a category, Syntax: Category::Field"))
             .with_context(|| s.to_owned())?;
-        let field = *split
-            .get(1)
-            .ok_or(eyre!("expected a field, Syntax: Category:Field"))
-            .with_context(|| s.to_owned())?;
+
+        let field = split
+            .next()
+            .ok_or_else(|| eyre!("expected a field, Syntax: Category::Field"))
+            .with_context(|| s.to_owned())
+            .with_context(|| format!("After {category}"))?;
 
         match category {
             "Battery" => Ok(Self::Battery(field.parse()?)),
@@ -133,7 +134,7 @@ impl<'a> DeviceCategoryDataCache<'a> {
     }
 
     pub fn get_notifications(&self) -> Result<&Vec<NotificationData>> {
-        Ok(get_or_try_init(&self.notification, || {
+        get_or_try_init(&self.notification, || {
             let mut notifications: Vec<NotificationData> = self
                 .device
                 .get_notifications()?
@@ -146,7 +147,7 @@ impl<'a> DeviceCategoryDataCache<'a> {
             notifications.sort_by(|a, b| a.app_name.cmp(&b.app_name));
 
             Ok::<Vec<NotificationData>, Report>(notifications)
-        })?)
+        })
     }
 }
 
@@ -186,7 +187,7 @@ impl FieldCategory {
 
                         let text = texts
                             .get(index)
-                            .ok_or(eyre!("No format specified for this battery range"))
+                            .ok_or_else(|| eyre!("No format specified for this battery range"))
                             .with_context(|| config.to_string())
                             .with_context(|| format!("{:?}", texts))?;
 
@@ -198,10 +199,10 @@ impl FieldCategory {
                 let info = cache.get_device_info();
                 match f {
                     DeviceInfo::Address => Cow::Borrowed(
-                        &info
+                        info
                             .reachable_addresses
-                            .get(0)
-                            .ok_or(eyre!("Ip address not found for device"))?,
+                            .first()
+                            .ok_or_else(|| eyre!("Ip address not found for device"))?,
                     ),
                     DeviceInfo::DeviceName => Cow::Borrowed(&info.name),
                     DeviceInfo::DeviceTypeText => match info.type_ {
@@ -224,6 +225,6 @@ impl FieldCategory {
 
 impl FieldFormat for FieldCategory {
     fn parse(s: &str) -> Result<Self> {
-        Ok(s.parse()?)
+        s.parse()
     }
 }

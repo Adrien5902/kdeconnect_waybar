@@ -38,7 +38,7 @@ impl Notification {
                             Chunk::Str(s) => res.push_str(s),
                             Chunk::Field(field) => {
                                 let cow: Cow<'a, str> =
-                                    field.grouped_to_str(app_name, &notifications, config)?;
+                                    field.grouped_to_str(app_name, notifications, config)?;
 
                                 res.push_str(&cow);
                             }
@@ -52,7 +52,7 @@ impl Notification {
                 for notification in notifications {
                     for chunk in &format.chunks {
                         match chunk {
-                            Chunk::Str(s) => res.push_str(&s),
+                            Chunk::Str(s) => res.push_str(s),
                             Chunk::Field(field) => {
                                 res.push_str(&field.single_to_str(notification, config)?)
                             }

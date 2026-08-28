@@ -19,7 +19,7 @@
 //!
 //!"custom/kdeconnect": {
 //!    "format": "{}",
-//!    "exec": "kdeconnect_waybar", <-- or "kdeconnect_waybar -c <name>" to use a custom config name
+//!    "exec": "kdeconnect_waybar", <-- or "kdeconnect_waybar -c <name>" to use a custom config name or with "-d <device_id> to use a specific device"
 //!    "return-type": "json",
 //!    "on-click": ""
 //!}
@@ -45,16 +45,16 @@
 //! Here's an example of what it could look like :
 //! ```json
 //! {
-//! 	"$schema": "./config.schema.json",
-//! 	"configs": [
-//! 		{
-//! 			"update_interval_secs": 5,
-//! 			"format": "{Battery::ChargePercent}% {Battery::ChargeTexts} {Notification::Grouped}",
-//! 			"tooltip_format": "Device type: {DeviceInfo::DeviceTypeText}\nBattery status: {Battery::IsChargingText} {Battery::ChargePercent}% \nNotifications:\n{Notification::Single}",
-//! 			"device_not_found_text": "",
-//! 			"device_not_found_tooltip_text": "Device not found make sure kdeconnect is running and phone is connected",
-//! 			"device_phone_text": "Phone ",
-//! 			"device_tablet_text": "Tablet ",
+//!     "$schema": "./config.schema.json",
+//!     "configs": [
+//!         {
+//!             "update_interval_secs": 5,
+//!             "format": "{Battery::ChargePercent}% {Battery::ChargeTexts} {Notification::Grouped}",
+//!             "tooltip_format": "Device type: {DeviceInfo::DeviceTypeText}\nBattery status: {Battery::IsChargingText} {Battery::ChargePercent}% \nNotifications:\n{Notification::Single}",
+//!             "device_not_found_text": "",
+//!             "device_not_found_tooltip_text": "Device not found make sure kdeconnect is running and phone is connected",
+//!             "device_phone_text": "Phone ",
+//!             "device_tablet_text": "Tablet ",
 //!         }
 //!     ]
 //! }
@@ -101,7 +101,7 @@ use formatter::*;
 use wrapper::*;
 
 thread_local! {
-    static IS_VERBOSE: OnceCell<bool> = OnceCell::new();
+    static IS_VERBOSE: OnceCell<bool> = const { OnceCell::new() };
 }
 
 macro_rules! debug {
@@ -128,7 +128,7 @@ impl AppState {
         let selected_config = match selected_config_str {
             Some(name) => configs
                 .into_iter()
-                .find(|c| c.name.as_deref() == Some(&name))
+                .find(|c| c.name.as_deref() == Some(name))
                 .ok_or(eyre!(
                     "No config with name {name} found at {}",
                     config_file_path.to_string_lossy()
@@ -301,7 +301,7 @@ impl<'a> OutputFormat<'a> {
 
         Ok(OutputFormat {
             text: Cow::Owned(text),
-            tooltip: tooltip.map(|s| Cow::Owned(s)),
+            tooltip: tooltip.map(Cow::Owned),
         })
     }
 

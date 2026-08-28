@@ -46,15 +46,14 @@ pub enum Chunk<T: FieldFormat> {
 
 const OPENING_CHAR: char = '{';
 const CLOSING_CHAR: char = '}';
-const PATH_SEPARATOR: &'static str = "::";
+const PATH_SEPARATOR: &str = "::";
 
 impl<T: FieldFormat> Format<T> {
     pub fn parse(format: &str) -> Result<Self> {
         let mut current_buffer = String::new();
-        let mut chars = format.chars().peekable();
         let mut chunks = Vec::new();
 
-        while let Some(c) = chars.next() {
+        for c in format.chars() {
             match c {
                 OPENING_CHAR => {
                     if !current_buffer.is_empty() {
@@ -99,7 +98,7 @@ impl Chunk<FieldCategory> {
     ) -> Result<Cow<'a, str>> {
         match self {
             Chunk::Str(s) => Ok(Cow::Borrowed(s)),
-            Chunk::Field(f) => Ok(f.get_from_device(config, &cache)?),
+            Chunk::Field(f) => Ok(f.get_from_device(config, cache)?),
         }
     }
 }

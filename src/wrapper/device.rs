@@ -50,7 +50,7 @@ impl<'a> Device<'a> {
 
     fn get_device_info(client: &Client, path: &Path) -> Result<DeviceInfoData> {
         let interface = Self::interface();
-        client.get_all(&path, &interface)
+        client.get_all(path, &interface)
     }
 
     pub(crate) fn notifications_interface(&self) -> String {

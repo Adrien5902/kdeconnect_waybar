@@ -17,7 +17,7 @@ impl FromDbusValue for bool {
 
 impl FromDbusValue for i64 {
     fn from_dbus(v: &dyn RefArg) -> Option<Self> {
-        v.as_i64().map(|v| v as i64)
+        v.as_i64()
     }
 }
 
@@ -33,8 +33,7 @@ where
 {
     fn from_dbus(v: &dyn RefArg) -> Option<Vec<T>> {
         v.as_iter()
-            .map(|iter| iter.map(|v| T::from_dbus(v)).collect::<Option<Vec<T>>>())
-            .flatten()
+            .and_then(|iter| iter.map(|v| T::from_dbus(v)).collect::<Option<Vec<T>>>())
     }
 }
 
