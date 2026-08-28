@@ -115,9 +115,15 @@ pub struct Config {
     pub device_tablet_text: String,
 
     #[serde(default = "default_device_desktop_text")]
+    /// Will replace {[`DeviceInfo::DeviceTypeText`]} in any [`GlobalFormat`] if device is a desktop computer
+    ///
+    /// e.g. `"Desktop "`
     pub device_desktop_text: String,
 
     #[serde(default = "default_device_laptop_text")]
+    /// Will replace {[`DeviceInfo::DeviceTypeText`]} in any [`GlobalFormat`] if device is a laptop
+    ///
+    /// e.g. `"Laptop "`
     pub device_laptop_text: String,
 
     #[serde(default)]
