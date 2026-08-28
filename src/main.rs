@@ -80,7 +80,7 @@
 //!
 //! If you can pin point the issue or wanna request a new feature then feel free to open an issue [here](https://github.com/Adrien5902/kdeconnect_waybar/issues)
 
-use clap::{ArgAction, Command, Parser, arg, command, value_parser};
+use clap::{ArgAction, Command, arg, command, value_parser};
 use color_eyre::eyre::{Result, eyre};
 use notify::{Event, EventKind, Watcher};
 use serde::Serialize;
@@ -99,17 +99,6 @@ use config::*;
 use formatter::*;
 #[cfg(feature = "dbus")]
 use wrapper::*;
-
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-pub struct Args {
-    /// Name of the config to use
-    #[arg(short, long)]
-    pub config_name: String,
-    /// Generate the config.schema.json file
-    #[arg(short, long, default_value_t = false)]
-    pub gen_schema: bool,
-}
 
 thread_local! {
     static IS_VERBOSE: OnceCell<bool> = OnceCell::new();
@@ -158,7 +147,10 @@ impl AppState {
         Ok(state)
     }
 
-    fn fetch_device<'a>(&'a self) -> Result<Option<Device<'a>>> {
+    fn fetch_device<'a>(
+        &'a self,
+        device_id_override: Option<&String>,
+    ) -> Result<Option<Device<'a>>> {
         let devices_res = self.client.devices();
         if let Err(error) = &devices_res {
             // This means connection to kdeconnect failed
@@ -171,7 +163,7 @@ impl AppState {
         };
         let devices = devices_res?;
 
-        let device = match &self.config.device_id {
+        let device = match device_id_override.or(self.config.device_id.as_ref()) {
             Some(id) => devices.into_iter().find(|d| d.id == *id),
             None => devices
                 .into_iter()
@@ -191,6 +183,13 @@ fn main() -> Result<()> {
             )
             .required(false)
             .value_parser(value_parser!(String)),
+        )
+        .arg(
+            arg!(
+                -d --device <ID> "Override config device id"
+            )
+            .required(false)
+            .value_parser(value_parser!(DeviceId)),
         )
         .arg(
             arg!(-v --verbose "Prints debug messages to stdout")
@@ -231,6 +230,8 @@ fn main() -> Result<()> {
         })
         .expect("State already set");
 
+    let device_id = matches.get_one::<DeviceId>("device_id");
+
     let no_updates = matches
         .get_one::<bool>("no_updates")
         .copied()
@@ -249,7 +250,7 @@ fn main() -> Result<()> {
     watcher.watch(&ConfigFile::dir()?, notify::RecursiveMode::NonRecursive)?;
 
     'main: loop {
-        let device = state.fetch_device()?;
+        let device = state.fetch_device(device_id)?;
         let output = OutputFormat::format_output(device.as_ref(), &state.config)?;
 
         writeln!(&mut stdout_lock, "{}", serde_json::to_string(&output)?)?;
