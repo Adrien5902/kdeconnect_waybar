@@ -5,7 +5,7 @@ use crate::wrapper::{
 };
 use crate::{config::Config, formatter::*};
 use color_eyre::eyre::{Context, Report, Result, eyre};
-use std::{borrow::Cow, str::FromStr, sync::OnceLock};
+use std::{borrow::Cow, cell::OnceCell, str::FromStr};
 use strum::EnumString;
 
 #[derive(Debug, Clone, Copy)]
@@ -94,13 +94,12 @@ pub fn failed_to_parse_field_kind(s: &str) -> Report {
 /// Used not to fetch the device data twice
 pub struct DeviceCategoryDataCache<'a> {
     device: &'a Device<'a>,
-    device_info: OnceLock<DeviceInfoData>,
-    battery: OnceLock<BatteryStatus>,
-    notification: OnceLock<Vec<NotificationData>>,
+    battery: OnceCell<BatteryStatus>,
+    notification: OnceCell<Vec<NotificationData>>,
 }
 
 // Helper function to remove nightly feature dependency once_cell_try
-pub fn get_or_try_init<T, F, E>(cell: &OnceLock<T>, f: F) -> Result<&T, E>
+pub fn get_or_try_init<T, F, E>(cell: &OnceCell<T>, f: F) -> Result<&T, E>
 where
     F: FnOnce() -> Result<T, E>,
 {
@@ -108,7 +107,7 @@ where
         return Ok(value);
     }
 
-    // This should always be ok since if the code continued nothing was set 
+    // This should always be ok since if the code continued nothing was set
     let _ = cell.set(f()?);
     // This shouldn't panic as we just set it's content
     Ok(cell.get().unwrap())
@@ -118,16 +117,13 @@ impl<'a> DeviceCategoryDataCache<'a> {
     pub fn new(device: &'a Device<'a>) -> Self {
         Self {
             device,
-            device_info: OnceLock::new(),
-            battery: OnceLock::new(),
-            notification: OnceLock::new(),
+            battery: OnceCell::new(),
+            notification: OnceCell::new(),
         }
     }
 
-    pub fn get_device_info(&self) -> Result<&DeviceInfoData> {
-        Ok(get_or_try_init(&self.device_info, || {
-            self.device.get_device_info()
-        })?)
+    pub fn get_device_info(&self) -> &DeviceInfoData {
+        self.device.info.get().unwrap()
     }
 
     pub fn get_battery(&self) -> Result<&BatteryStatus> {
@@ -199,7 +195,7 @@ impl FieldCategory {
                 }
             }
             FieldCategory::DeviceInfo(f) => {
-                let info = cache.get_device_info()?;
+                let info = cache.get_device_info();
                 match f {
                     DeviceInfo::Address => Cow::Borrowed(
                         &info

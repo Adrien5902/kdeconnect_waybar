@@ -43,7 +43,7 @@ impl Client {
             .devices_ids()?
             .into_iter()
             .map(|id| Device::new(self, id))
-            .collect())
+            .collect::<Result<_>>()?)
     }
 }
 

@@ -50,7 +50,7 @@ impl Display for DBusError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum DBusErrorKind {
     UnknownObject,
     Unknown(Option<String>),

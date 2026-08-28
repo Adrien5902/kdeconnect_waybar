@@ -88,7 +88,7 @@ use std::{
     borrow::Cow,
     cell::OnceCell,
     io::{Write, stdout},
-    rc::Rc,
+    path::Path,
     sync::mpsc,
 };
 
@@ -122,6 +122,62 @@ macro_rules! debug {
                 println!("[INFO] {}", format_args!($($arg)*))
             }
         })
+    }
+}
+
+struct AppState {
+    client: Client,
+    config: Config,
+}
+
+impl AppState {
+    fn load(config_file_path: &Path, selected_config_str: Option<&str>) -> Result<Self> {
+        let configs: Vec<Config> = ConfigFile::read_all()?.configs.into_iter().collect();
+
+        debug!("Reloading config");
+
+        let selected_config = match selected_config_str {
+            Some(name) => configs
+                .into_iter()
+                .find(|c| c.name.as_deref() == Some(&name))
+                .ok_or(eyre!(
+                    "No config with name {name} found at {}",
+                    config_file_path.to_string_lossy()
+                )),
+            None => configs.into_iter().next().ok_or(eyre!(
+                "No config found at {}",
+                config_file_path.to_string_lossy()
+            )),
+        }?;
+
+        let state = Self {
+            client: Client::new(selected_config.update_interval)?,
+            config: selected_config,
+        };
+
+        Ok(state)
+    }
+
+    fn fetch_device<'a>(&'a self) -> Result<Option<Device<'a>>> {
+        let devices_res = self.client.devices();
+        if let Err(error) = &devices_res {
+            // This means connection to kdeconnect failed
+            // In this case we should proceed as if no device was found
+            if let Error::DBusError(dbus_error) = &error
+                && dbus_error.kind == DBusErrorKind::UnknownObject
+            {
+                return Ok(None);
+            }
+        };
+        let devices = devices_res?;
+
+        let device = match &self.config.device_id {
+            Some(id) => devices.into_iter().find(|d| d.id == *id),
+            None => devices
+                .into_iter()
+                .find(|device| device.info.get().unwrap().is_reachable),
+        };
+        Ok(device)
     }
 }
 
@@ -180,39 +236,10 @@ fn main() -> Result<()> {
         .copied()
         .unwrap_or_default();
 
-    let selected_config = matches.get_one::<String>("config");
-    let path = ConfigFile::config_file_path()?;
-
-    let mut configs: Vec<Rc<Config>> = Vec::new();
-
-    let mut refresh_configs = || {
-        debug!("Reloading config");
-        configs = ConfigFile::read_all()?
-            .configs
-            .into_iter()
-            .map(|c| Rc::new(c))
-            .collect();
-
-        let config = match selected_config {
-            Some(name) => configs
-                .iter()
-                .find(|c| c.name.as_deref() == Some(&name))
-                .ok_or(eyre!(
-                    "No config with name {name} found at {}",
-                    path.to_string_lossy()
-                )),
-            None => configs
-                .get(0)
-                .ok_or(eyre!("No config found at {}", path.to_string_lossy())),
-        }?
-        .clone();
-
-        let update_interval = config.update_interval_secs;
-        let client = Client::new(update_interval)?;
-        Ok::<_, color_eyre::eyre::Report>((config, update_interval, client))
-    };
-
-    let (mut config, mut update_interval, mut client) = refresh_configs()?;
+    let config_file_path = ConfigFile::config_file_path()?;
+    let selected_config_arg = matches.get_one::<String>("config");
+    let selected_config_str = selected_config_arg.map(|s| s.as_str());
+    let mut state = AppState::load(&config_file_path, selected_config_str)?;
 
     let mut stdout_lock = stdout().lock();
 
@@ -222,31 +249,8 @@ fn main() -> Result<()> {
     watcher.watch(&ConfigFile::dir()?, notify::RecursiveMode::NonRecursive)?;
 
     'main: loop {
-        // TODO: Catch errors and restart rather than panic
-        let devices = match client.devices() {
-            Ok(v) => Some(v),
-            Err(e) => {
-                let Error::DBusError(de) = &e else {
-                    return Err(e.into());
-                };
-
-                match de.kind {
-                    // This means connection to kdeconnect failed
-                    // In this case we should proceed as if no device was found
-                    DBusErrorKind::UnknownObject => None,
-                    _ => return Err(e.into()),
-                }
-            }
-        };
-
-        let device = match &config.device_id {
-            Some(id) => devices
-                .as_ref()
-                .and_then(|d| d.iter().find(|d| d.id == *id)),
-            None => devices.as_ref().and_then(|d| d.get(0)),
-        };
-
-        let output = OutputFormat::format_output(device, &config)?;
+        let device = state.fetch_device()?;
+        let output = OutputFormat::format_output(device.as_ref(), &state.config)?;
 
         writeln!(&mut stdout_lock, "{}", serde_json::to_string(&output)?)?;
 
@@ -254,15 +258,11 @@ fn main() -> Result<()> {
             break 'main Ok(());
         }
 
-        match rx.recv_timeout(update_interval) {
+        match rx.recv_timeout(state.config.update_interval) {
             Ok(res) => {
                 let event = res?;
-                let config_changed = event.paths.iter().any(|event_path| event_path == &path);
-
-                if config_changed
-                    && matches!(event.kind, EventKind::Modify(_) | EventKind::Create(_))
-                {
-                    (config, update_interval, client) = refresh_configs()?;
+                if matches!(event.kind, EventKind::Modify(_)) {
+                    state = AppState::load(&config_file_path, selected_config_str)?
                 }
             }
             Err(e) => match e {
@@ -286,7 +286,7 @@ impl<'a> OutputFormat<'a> {
             return Ok(Self::device_not_found(config));
         };
         let cache = DeviceCategoryDataCache::new(device);
-        let info = cache.get_device_info()?;
+        let info = cache.get_device_info();
 
         if !info.is_reachable {
             return Ok(Self::device_not_found(config));

@@ -42,12 +42,13 @@ pub struct Config {
     #[serde(deserialize_with = "deserialize_duration_secs")]
     #[serde(default = "default_update_interval")]
     #[schemars(with = "f64")]
+    #[serde(rename = "update_interval_secs")]
     /// The interval at which the waybar module text refreshes in seconds, supports floats e.g. 3.14
     ///
     /// Default is 5s
     ///
     /// You may wanna bring this down, though you shouldn't go under 1 second it causes issues with waybar tooltips
-    pub update_interval_secs: Duration,
+    pub update_interval: Duration,
 
     #[schemars(with = "String")]
     /// The default [`GlobalFormat`] used for the module text

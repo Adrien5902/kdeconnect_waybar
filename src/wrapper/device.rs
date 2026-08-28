@@ -6,12 +6,17 @@ use crate::wrapper::{
     parsing::FromDBusMap,
 };
 use dbus::arg::PropMap;
-use std::{fmt::Debug, path::PathBuf};
+use std::{
+    cell::OnceCell,
+    fmt::Debug,
+    path::{Path, PathBuf},
+};
 
 pub type DeviceId = String;
 
 pub struct Device<'a> {
     pub id: DeviceId,
+    pub info: OnceCell<DeviceInfoData>,
     pub(crate) client: &'a Client,
 }
 
@@ -26,8 +31,15 @@ impl<'a> Device<'a> {
         Client::INTERFACE_ROOT.to_string() + ".device"
     }
 
-    pub(crate) fn new(client: &'a Client, id: DeviceId) -> Self {
-        Self { id, client }
+    pub(crate) fn new(client: &'a Client, id: DeviceId) -> Result<Self> {
+        let device = Self {
+            id,
+            client,
+            info: OnceCell::new(),
+        };
+        let info = Self::get_device_info(client, &device.path())?;
+        device.info.set(info).unwrap();
+        Ok(device)
     }
 
     pub fn get_battery_status(&self) -> Result<BatteryStatus> {
@@ -36,10 +48,9 @@ impl<'a> Device<'a> {
         self.get_all(&path, &interface)
     }
 
-    pub fn get_device_info(&self) -> Result<DeviceInfoData> {
-        let path = self.path();
+    fn get_device_info(client: &Client, path: &Path) -> Result<DeviceInfoData> {
         let interface = Self::interface();
-        self.get_all(&path, &interface)
+        client.get_all(&path, &interface)
     }
 
     pub(crate) fn notifications_interface(&self) -> String {
