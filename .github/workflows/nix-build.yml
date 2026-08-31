@@ -11,6 +11,6 @@ jobs:
       - uses: cachix/install-nix-action@v31
       - uses: cachix/cachix-action@v17
         with:
-          name: your-cache-name
+          name: kdeconnectwaybar
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix build .#default
