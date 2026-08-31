@@ -11,19 +11,94 @@
 </p>
 
 ## 🔧 Installation
+
 ### Using `cargo` :
+
 simply run the command :
+
 ```sh
 cargo install kdeconnect_waybar
 ```
 
+### Using `nix` :
+
+#### Run directly
+
+Execute the package without installing it permanently:
+
+```sh
+nix run github:Adrien5902/kdeconnect_waybar
+```
+
+<details>
+<summary>NixOS Configuration</summary>
+
+Add the flake to your inputs and import the module to add the package to `environment.systemPackages`:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    kdeconnect_waybar.url = "github:Adrien5902/kdeconnect_waybar";
+  };
+
+  outputs = { self, nixpkgs, kdeconnect_waybar, ... }: {
+    nixosConfigurations.yourHostname = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        kdeconnect_waybar.nixosModules.default
+      ];
+    };
+  };
+}
+```
+
+</details>
+
+<details>
+<summary>Home Manager Configuration</summary>
+
+Add the flake to your inputs, import the Home Manager module, and configure your settings:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    kdeconnect_waybar.url = "github:Adrien5902/kdeconnect_waybar";
+  };
+
+  outputs = { self, nixpkgs, home-manager, kdeconnect_waybar, ... }: {
+    homeConfigurations."username@hostname" = home-manager.lib.homeManagerConfiguration {
+      pkgs = nixpkgs.legacyPackages."x86_64-linux";
+      modules = [
+        kdeconnect_waybar.homeManagerModules.default
+        {
+          programs.kdeconnect-waybar = {
+            enable = true;
+            settings = {
+              update_interval_secs = 5.0;
+            };
+          };
+        }
+      ];
+    };
+  };
+}
+```
+
+</details>
+
 ## ⚙️ Configuration
+
 See [docs 📄](https://adrien5902.github.io/kdeconnect_waybar/kdeconnect_waybar/) for customization and styling
 
 ## 🧭 Examples
->![Preview](./assets/preview.png)
 
-> My personal config : 
+> ![Preview](./assets/preview.png)
+
+> My personal config :
 >
 > ![Preview](./assets/cyberpunk.png)
 
