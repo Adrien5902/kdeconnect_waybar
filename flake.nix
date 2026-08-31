@@ -6,6 +6,13 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
+  nixConfig = {
+    extra-substituters = [ "https://kdeconnectwaybar.cachix.org" ];
+    extra-trusted-public-keys = [
+      "kdeconnectwaybar.cachix.org-1:20izbMZxWSaYLvuEXt/s/l0Z2Ook8CMmAWdMfkuTvJ0="
+    ];
+  };
+
   outputs =
     {
       self,
