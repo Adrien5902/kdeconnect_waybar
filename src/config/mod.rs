@@ -41,7 +41,7 @@ pub struct Config {
 
     #[serde(deserialize_with = "deserialize_duration_secs")]
     #[serde(default = "default_update_interval")]
-    #[schemars(with = "f64")]
+    #[schemars(with = "f64", default = "default_update_interval_f64")]
     #[serde(rename = "update_interval_secs")]
     /// The interval at which the waybar module text refreshes in seconds, supports floats e.g. 3.14
     ///
@@ -161,6 +161,11 @@ impl Display for Config {
         // TODO: Needs better implementation, used in context when config produces errors
         f.write_str(&format!("{:?}", self))
     }
+}
+
+#[doc(hidden)]
+fn default_update_interval_f64() -> f64 {
+    default_update_interval().as_secs_f64()
 }
 
 #[doc(hidden)]
