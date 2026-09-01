@@ -230,7 +230,7 @@ fn main() -> Result<()> {
         })
         .expect("State already set");
 
-    let device_id = matches.get_one::<DeviceId>("device_id");
+    let device_id = matches.get_one::<DeviceId>("device");
 
     let no_updates = matches
         .get_one::<bool>("no_updates")
