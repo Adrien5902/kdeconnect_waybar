@@ -1,8 +1,9 @@
 name: Nix Build
 on:
-  push:
-    branches: [ main ]
-  pull_request:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
