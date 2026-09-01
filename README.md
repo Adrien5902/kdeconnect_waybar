@@ -78,7 +78,16 @@ Add the flake to your inputs, import the Home Manager module, and configure your
           programs.kdeconnect-waybar = {
             enable = true;
             settings = {
-              update_interval_secs = 5.0;
+              configs = [
+                {
+                  name = "default-device";
+                  format = "{DeviceName} {Battery}";
+                  app_icons = {
+                    YouTube = "󰗃";
+                  };
+                  update_interval_secs = 2.5;
+                }
+              ];
             };
           };
         }

@@ -67,7 +67,7 @@
     )
     // {
       nixosModules.default = { pkgs, ... }: {
-        environment.systemPackages = [ self.packages.${pkgs.system}.default ];
+        environment.systemPackages = [ self.packages.${pkgs.stdenv.hostPlatform.system}.default ];
       };
 
       homeManagerModules.default =
@@ -79,13 +79,20 @@
         }:
         let
           cfg = config.programs.kdeconnect-waybar;
-          pkg = self.packages.${pkgs.system}.default;
+          pkg = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
           schema = builtins.fromJSON (builtins.readFile "${pkg}/share/kdeconnect_waybar/config.schema.json");
-          configDef = schema.definitions.Config or schema."$defs".Config;
 
           jsonSchemaToNixType =
             prop:
-            if prop ? "$ref" || prop ? anyOf || prop ? oneOf then
+            if prop ? "$ref" then
+              let
+                resolved = lib.getAttrFromPath (lib.splitString "/" (lib.removePrefix "#/" prop."$ref")) schema;
+              in
+              if resolved.type or "" == "object" then
+                lib.types.submodule { options = lib.mapAttrs toOption (resolved.properties or { }); }
+              else
+                jsonSchemaToNixType resolved
+            else if prop ? anyOf || prop ? oneOf then
               lib.types.nullOr lib.types.str
             else
               switchType (prop.type or null) prop;
@@ -120,7 +127,7 @@
               description = prop.description or "Option ${name}";
             };
 
-          generatedOptions = lib.mapAttrs toOption configDef.properties;
+          generatedOptions = lib.mapAttrs toOption schema.properties;
         in
         {
           options.programs.kdeconnect-waybar = {
@@ -134,9 +141,9 @@
 
           config = lib.mkIf cfg.enable {
             home.packages = [ pkg ];
-            xdg.configFile."kdeconnect_waybar/config.json".text = builtins.toJSON {
-              configs = [ (lib.filterAttrs (_: v: v != null) cfg.settings) ];
-            };
+            xdg.configFile."kdeconnect_waybar/config.json".text = builtins.toJSON (
+              lib.filterAttrsRecursive (n: v: v != null) cfg.settings
+            );
           };
         };
     };
