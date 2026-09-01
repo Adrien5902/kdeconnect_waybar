@@ -59,6 +59,7 @@
             pkgs.pkg-config
             pkgs.rustc
             pkgs.cargo
+            pkgs.rust-analyzer
           ];
           buildInputs = [ pkgs.dbus ];
         };
