@@ -21,7 +21,9 @@ impl Notification {
         let mut res: String = String::new();
         match *self {
             Notification::Grouped => {
-                let format = &config.notification_grouped_format;
+                let format = config.notification_grouped_format
+                    .as_ref()
+                    .ok_or_else(|| eyre!("Use of Notification::Grouped but no notification_grouped_format were defubed in config"))?;
 
                 // We use BTree map instead of HashMap because we don't want notification order to change
                 // So notifications are organized in app_name alphabetical order
@@ -48,7 +50,10 @@ impl Notification {
             }
 
             Notification::Single => {
-                let format = &config.notification_single_format;
+                let format = config.notification_single_format
+                    .as_ref()
+                    .ok_or_else(|| eyre!("Use of Notification::Single but no notification_single_format were defubed in config"))?;
+
                 for notification in notifications {
                     for chunk in &format.chunks {
                         match chunk {

@@ -129,11 +129,11 @@ pub struct Config {
     #[serde(default)]
     #[schemars(with = "Option<String>")]
     /// Groups notifications per app, and for each app replaces {[`Notification::Grouped`]} with the given [`NotificationFormat`]
-    pub notification_grouped_format: NotificationFormat,
+    pub notification_grouped_format: Option<NotificationFormat>,
     #[serde(default)]
     #[schemars(with = "Option<String>")]
     /// For each notification replaces {[`Notification::Single`]} with the given [`NotificationFormat`]
-    pub notification_single_format: NotificationFormat,
+    pub notification_single_format: Option<NotificationFormat>,
     #[serde(default)]
     /// A dictionary with ints as keys and text strings as values
     ///
