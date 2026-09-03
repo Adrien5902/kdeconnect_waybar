@@ -122,6 +122,22 @@ impl FieldFormat for NotificationFormatField {
     }
 }
 
+fn sanitizate_html_tags(s: &str) -> String {
+    // New sanitizated is at least longer string size
+    let mut sanitizated = String::with_capacity(s.len());
+    for ch in s.chars() {
+        match ch {
+            '<' => sanitizated.push_str("&lt;"),
+            '>' => sanitizated.push_str("&gt;"),
+            '&' => sanitizated.push_str("&amp;"),
+            '\"' => sanitizated.push_str("&quot;"),
+            '\'' => sanitizated.push_str("&apos;"),
+            other => sanitizated.push(other),
+        }
+    }
+    sanitizated
+}
+
 impl NotificationFormatField {
     pub fn grouped_to_str<'a>(
         &self,
@@ -154,18 +170,28 @@ impl NotificationFormatField {
         notification: &'a NotificationData,
         config: &'a Config,
     ) -> Result<Cow<'a, str>> {
-        let s = match *self {
-            NotificationFormatField::AppName => &notification.app_name,
-            NotificationFormatField::CustomIcon => {
-                Notification::get_custom_icon(&notification.app_name, config)
-            }
+        let s: Cow<'a, str> = match *self {
+            NotificationFormatField::AppName => Cow::Borrowed(&notification.app_name),
+            NotificationFormatField::CustomIcon => Cow::Borrowed(Notification::get_custom_icon(
+                &notification.app_name,
+                config,
+            )),
             NotificationFormatField::Count => Err(eyre!("Not available in single notification"))?,
             NotificationFormatField::CountText => {
                 Err(eyre!("Not available in single notification"))?
             }
-            NotificationFormatField::Content => &notification.text,
-            NotificationFormatField::Title => &notification.title,
+            NotificationFormatField::Content => {
+                // Notification text can contain unsanitized contetn
+                // If notification is a group conversation sanitization is done by kdeconnect
+                // If not were doing it ourselves
+                if !notification.is_group_conversation {
+                    Cow::Owned(sanitizate_html_tags(&notification.text))
+                } else {
+                    Cow::Borrowed(&notification.text)
+                }
+            }
+            NotificationFormatField::Title => Cow::Owned(sanitizate_html_tags(&notification.title)),
         };
-        Ok(Cow::Borrowed(s))
+        Ok(s)
     }
 }

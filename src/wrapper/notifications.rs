@@ -12,9 +12,8 @@ impl<'a> Notification<'a> {
     }
 
     pub fn get_data(&self) -> Result<NotificationData> {
-        let mut data: NotificationData =
+        let data: NotificationData =
             self.get_all(&self.path(), &self.device.notifications_interface())?;
-        data.text = data.text.replace("<br/>", "\n");
         Ok(data)
     }
 }
