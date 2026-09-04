@@ -185,7 +185,7 @@ impl NotificationFormatField {
                 if !notification.is_group_conversation {
                     sanitizate_html_tags(f, &notification.text);
                 } else {
-                    f.write_str(&notification.text)?;
+                    f.write_str(&notification.text.replace("<br/>", "\n"))?;
                 }
             }
             NotificationFormatField::Title => sanitizate_html_tags(f, &notification.title),
