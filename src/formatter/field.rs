@@ -5,7 +5,7 @@ use crate::wrapper::{
 };
 use crate::{config::Config, formatter::*};
 use color_eyre::eyre::{Context, Report, Result, eyre};
-use std::{borrow::Cow, cell::OnceCell, str::FromStr};
+use std::{cell::OnceCell, str::FromStr};
 use strum::EnumString;
 
 #[derive(Debug, Clone, Copy)]
@@ -152,22 +152,23 @@ impl<'a> DeviceCategoryDataCache<'a> {
 }
 
 impl FieldCategory {
-    pub fn get_from_device<'a>(
+    pub fn format_from_device<'a>(
         &self,
+        f: &mut String,
         config: &'a Config,
         cache: &'a DeviceCategoryDataCache,
-    ) -> Result<Cow<'a, str>> {
-        let s: Cow<'a, str> = match *self {
-            FieldCategory::Battery(f) => {
+    ) -> Result<()> {
+        match *self {
+            FieldCategory::Battery(field) => {
                 let status = cache.get_battery()?;
 
-                match f {
-                    Battery::ChargePercent => Cow::Owned(status.charge.to_string()),
+                match field {
+                    Battery::ChargePercent => f.write_str(&status.charge.to_string())?,
                     Battery::IsChargingText => {
                         if status.is_charging {
-                            Cow::Borrowed(&config.is_charging_text)
+                            f.write_str(&config.is_charging_text)?;
                         } else {
-                            Cow::Borrowed(&config.isnt_charging_text)
+                            f.write_str(&config.isnt_charging_text)?;
                         }
                     }
                     Battery::ChargeTexts => {
@@ -190,36 +191,34 @@ impl FieldCategory {
                             .ok_or_else(|| eyre!("No format specified for this battery range"))
                             .with_context(|| config.to_string())
                             .with_context(|| format!("{:?}", texts))?;
-
-                        Cow::Borrowed(text)
+                        f.write_str(text)?;
                     }
                 }
             }
-            FieldCategory::DeviceInfo(f) => {
+            FieldCategory::DeviceInfo(field) => {
                 let info = cache.get_device_info();
-                match f {
-                    DeviceInfo::Address => Cow::Borrowed(
-                        info
-                            .reachable_addresses
+                match field {
+                    DeviceInfo::Address => f.write_str(
+                        info.reachable_addresses
                             .first()
                             .ok_or_else(|| eyre!("Ip address not found for device"))?,
-                    ),
-                    DeviceInfo::DeviceName => Cow::Borrowed(&info.name),
+                    )?,
+                    DeviceInfo::DeviceName => f.write_str(&info.name)?,
                     DeviceInfo::DeviceTypeText => match info.type_ {
-                        DeviceType::Phone => Cow::Borrowed(&config.device_phone_text),
-                        DeviceType::Tablet => Cow::Borrowed(&config.device_tablet_text),
-                        DeviceType::Desktop => Cow::Borrowed(&config.device_desktop_text),
-                        DeviceType::Laptop => Cow::Borrowed(&config.device_laptop_text),
+                        DeviceType::Phone => f.write_str(&config.device_phone_text)?,
+                        DeviceType::Tablet => f.write_str(&config.device_tablet_text)?,
+                        DeviceType::Desktop => f.write_str(&config.device_desktop_text)?,
+                        DeviceType::Laptop => f.write_str(&config.device_laptop_text)?,
                     },
                 }
             }
-            FieldCategory::Notification(f) => {
+            FieldCategory::Notification(field) => {
                 let notifications = cache.get_notifications()?;
-                Cow::Owned(f.to_string(notifications, config)?)
+                field.format(f, notifications, config)?;
             }
         };
 
-        Ok(s)
+        Ok(())
     }
 }
 

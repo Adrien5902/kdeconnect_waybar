@@ -1,7 +1,10 @@
 use crate::config::Config;
 use color_eyre::eyre::{Report, Result};
 use serde::{Deserialize, Deserializer};
-use std::{borrow::Cow, fmt::Debug, str::FromStr};
+use std::{
+    fmt::{Debug, Write},
+    str::FromStr,
+};
 
 pub mod field;
 pub mod notification;
@@ -79,27 +82,37 @@ impl<T: FieldFormat> Format<T> {
 }
 
 impl Format<FieldCategory> {
-    pub fn to_string(&self, config: &Config, cache: &DeviceCategoryDataCache) -> Result<String> {
-        let mut out = String::new();
-
+    pub fn format(
+        &self,
+        f: &mut String,
+        config: &Config,
+        cache: &DeviceCategoryDataCache,
+    ) -> Result<()> {
         for chunk in &self.chunks {
-            out.push_str(&chunk.to_str(config, cache)?);
+            chunk.format(f, config, cache)?;
         }
+        Ok(())
+    }
 
-        Ok(out)
+    pub fn to_string(&self, config: &Config, cache: &DeviceCategoryDataCache) -> Result<String> {
+        let mut s = String::new();
+        self.format(&mut s, config, cache)?;
+        Ok(s)
     }
 }
 
 impl Chunk<FieldCategory> {
-    pub fn to_str<'a>(
+    pub fn format<'a>(
         &'a self,
+        f: &mut String,
         config: &'a Config,
         cache: &'a DeviceCategoryDataCache,
-    ) -> Result<Cow<'a, str>> {
+    ) -> Result<()> {
         match self {
-            Chunk::Str(s) => Ok(Cow::Borrowed(s)),
-            Chunk::Field(f) => Ok(f.get_from_device(config, cache)?),
+            Chunk::Str(s) => f.write_str(s)?,
+            Chunk::Field(field) => field.format_from_device(f, config, cache)?,
         }
+        Ok(())
     }
 }
 

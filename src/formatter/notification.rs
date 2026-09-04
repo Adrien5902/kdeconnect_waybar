@@ -13,12 +13,12 @@ use strum::EnumString;
 pub type NotificationFormat = Format<NotificationFormatField>;
 
 impl Notification {
-    pub fn to_string<'a>(
+    pub fn format<'a>(
         &self,
+        f: &mut String,
         notifications: &'a [NotificationData],
         config: &'a Config,
-    ) -> Result<String> {
-        let mut res: String = String::new();
+    ) -> Result<()> {
         match *self {
             Notification::Grouped => {
                 let format = config.notification_grouped_format
@@ -37,12 +37,9 @@ impl Notification {
                 for (app_name, notifications) in &map {
                     for chunk in &format.chunks {
                         match chunk {
-                            Chunk::Str(s) => res.push_str(s),
+                            Chunk::Str(s) => f.push_str(s),
                             Chunk::Field(field) => {
-                                let cow: Cow<'a, str> =
-                                    field.grouped_to_str(app_name, notifications, config)?;
-
-                                res.push_str(&cow);
+                                field.format_grouped(f, app_name, notifications, config)?;
                             }
                         }
                     }
@@ -57,9 +54,9 @@ impl Notification {
                 for notification in notifications {
                     for chunk in &format.chunks {
                         match chunk {
-                            Chunk::Str(s) => res.push_str(s),
+                            Chunk::Str(s) => f.push_str(s),
                             Chunk::Field(field) => {
-                                res.push_str(&field.single_to_str(notification, config)?)
+                                field.format_single(f, notification, config)?;
                             }
                         }
                     }
@@ -67,7 +64,7 @@ impl Notification {
             }
         }
 
-        Ok(res)
+        Ok(())
     }
 
     const DEFAULT_ICON: &'static str = "?";
@@ -122,60 +119,61 @@ impl FieldFormat for NotificationFormatField {
     }
 }
 
-fn sanitizate_html_tags(s: &str) -> String {
-    // New sanitizated is at least longer string size
-    let mut sanitizated = String::with_capacity(s.len());
+fn sanitizate_html_tags(f: &mut String, s: &str) {
     for ch in s.chars() {
         match ch {
-            '<' => sanitizated.push_str("&lt;"),
-            '>' => sanitizated.push_str("&gt;"),
-            '&' => sanitizated.push_str("&amp;"),
-            '\"' => sanitizated.push_str("&quot;"),
-            '\'' => sanitizated.push_str("&apos;"),
-            other => sanitizated.push(other),
+            '<' => f.push_str("&lt;"),
+            '>' => f.push_str("&gt;"),
+            '&' => f.push_str("&amp;"),
+            '\"' => f.push_str("&quot;"),
+            '\'' => f.push_str("&apos;"),
+            other => f.push(other),
         }
     }
-    sanitizated
 }
 
 impl NotificationFormatField {
-    pub fn grouped_to_str<'a>(
+    pub fn format_grouped<'a>(
         &self,
+        f: &mut String,
         app_name: &'a str,
         notifications: &[&'a NotificationData],
         config: &'a Config,
-    ) -> Result<Cow<'a, str>> {
-        let s = match *self {
-            NotificationFormatField::AppName => Cow::Borrowed(app_name),
+    ) -> Result<()> {
+        match *self {
+            NotificationFormatField::AppName => f.write_str(app_name)?,
             NotificationFormatField::CustomIcon => {
-                Cow::Borrowed(Notification::get_custom_icon(app_name, config))
+                f.write_str(Notification::get_custom_icon(app_name, config))?
             }
-            NotificationFormatField::Count => Cow::Owned(notifications.len().to_string()),
-            NotificationFormatField::CountText => config
+            NotificationFormatField::Count => f.write_str(&notifications.len().to_string())?,
+            NotificationFormatField::CountText => match &config
                 .notifications_count_text
                 .get(&(notifications.len() as i64))
-                .or(config.notifications_count_text.get(&0))
-                .map(|s| Cow::<'_, str>::Borrowed(s))
-                .unwrap_or(Cow::Owned(notifications.len().to_string())),
+                .or_else(|| config.notifications_count_text.get(&0))
+            {
+                Some(s) => f.write_str(s)?,
+                None => f.write_str(&notifications.len().to_string())?,
+            },
             NotificationFormatField::Content => {
                 Err(eyre!("Not available in grouped notification"))?
             }
             NotificationFormatField::Title => Err(eyre!("Not available in grouped notification"))?,
         };
-        Ok(s)
+        Ok(())
     }
 
-    pub fn single_to_str<'a>(
+    pub fn format_single<'a>(
         &self,
+        f: &mut String,
         notification: &'a NotificationData,
         config: &'a Config,
-    ) -> Result<Cow<'a, str>> {
-        let s: Cow<'a, str> = match *self {
-            NotificationFormatField::AppName => Cow::Borrowed(&notification.app_name),
-            NotificationFormatField::CustomIcon => Cow::Borrowed(Notification::get_custom_icon(
+    ) -> Result<()> {
+        match *self {
+            NotificationFormatField::AppName => f.write_str(&notification.app_name)?,
+            NotificationFormatField::CustomIcon => f.write_str(Notification::get_custom_icon(
                 &notification.app_name,
                 config,
-            )),
+            ))?,
             NotificationFormatField::Count => Err(eyre!("Not available in single notification"))?,
             NotificationFormatField::CountText => {
                 Err(eyre!("Not available in single notification"))?
@@ -185,13 +183,13 @@ impl NotificationFormatField {
                 // If notification is a group conversation sanitization is done by kdeconnect
                 // If not were doing it ourselves
                 if !notification.is_group_conversation {
-                    Cow::Owned(sanitizate_html_tags(&notification.text))
+                    sanitizate_html_tags(f, &notification.text);
                 } else {
-                    Cow::Borrowed(&notification.text)
+                    f.write_str(&notification.text)?;
                 }
             }
-            NotificationFormatField::Title => Cow::Owned(sanitizate_html_tags(&notification.title)),
+            NotificationFormatField::Title => sanitizate_html_tags(f, &notification.title),
         };
-        Ok(s)
+        Ok(())
     }
 }
